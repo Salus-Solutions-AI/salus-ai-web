@@ -1,1 +1,1 @@
-# salus-ai-web
+This is the Salus AI web application.

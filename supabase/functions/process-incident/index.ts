@@ -1,0 +1,232 @@
+
+import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
+import { createClient } from 'npm:@supabase/supabase-js'
+import { uploadToS3, type S3Config } from './s3Utils.ts'
+import { startTextractJob, pollTextractJob, type TextractConfig } from './textractUtils.ts'
+import { IncidentPopulatorFactory } from './templates/IncidentPopulatorFactory.ts'
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+}
+
+serve(async (req) => {
+  // Handle CORS preflight requests
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: corsHeaders })
+  }
+
+  try {
+    const AWS_ACCESS_KEY_ID = Deno.env.get('AWS_ACCESS_KEY_ID') || ''
+    const AWS_SECRET_ACCESS_KEY = Deno.env.get('AWS_SECRET_ACCESS_KEY') || ''
+    const AWS_REGION = Deno.env.get('AWS_REGION') || 'us-east-1'
+
+    const ANTHROPIC_API_KEY = Deno.env.get('ANTHROPIC_API_KEY') || ''
+    
+    const supabaseAdmin = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+      {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false
+        }
+      }
+    )
+
+    const body = await req.json()
+    const { record } = body
+
+    if (!record || !record.id) {
+      return new Response(
+        JSON.stringify({ error: 'No valid incident record found in request' }),
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 400 
+        }
+      )
+    }
+
+    console.log("Processing incident record:", record.id)
+
+    const { uploadStatusUpdateError } = await updateIncidentStatus(supabaseAdmin, record.id, "Processing (Upload)")
+    if (uploadStatusUpdateError) {
+      console.error('Error updating incident status:', uploadStatusUpdateError)
+      return new Response(
+        JSON.stringify({ error: uploadStatusUpdateError.message }),
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 500 
+        }
+      )
+    }
+    
+    // Fetch the user's profile to get their organization
+    const { data: profileData, error: profileError } = await supabaseAdmin
+      .from('profiles')
+      .select('organization')
+      .eq('id', record.uploaded_by)
+      .single()
+    
+    if (profileError) {
+      console.warn(`Error fetching user profile: ${profileError.message}. Using default populator.`)
+    }
+    
+    const organization = profileData?.organization || null
+    console.log(`User organization: ${organization || 'Not specified'}`)
+    
+    // Download the document from Supabase storage
+    const { data, error: downloadError } = await supabaseAdmin
+      .storage
+      .from('incidents')
+      .download(record.file_path)
+
+    if (downloadError) {
+      return new Response(
+        JSON.stringify({ error: `Error downloading file: ${downloadError.message}` }), 
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+      )
+    }
+
+    if (!data) {
+      return new Response(
+        JSON.stringify({ error: 'No file data received' }), 
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 404 }
+      )
+    }
+
+    // Convert file to array buffer and then to Uint8Array
+    const fileBuffer = await data.arrayBuffer()
+    const documentBytes = new Uint8Array(fileBuffer)
+    
+    console.log(`File downloaded successfully, size: ${documentBytes.length} bytes`)
+    
+    // Configure S3 and upload the document
+    const s3Config: S3Config = {
+      region: AWS_REGION,
+      accessKeyId: AWS_ACCESS_KEY_ID,
+      secretAccessKey: AWS_SECRET_ACCESS_KEY,
+      bucket: 'salus-textract'
+    }
+    
+    // Generate a unique S3 key
+    const s3Key = `textract-processing/${record.id}`
+    
+    // Upload to S3
+    await uploadToS3(s3Config, s3Key, documentBytes)
+    
+    const { ocrStatusUploadError } = await updateIncidentStatus(supabaseAdmin, record.id, "Processing (OCR)")
+    if (ocrStatusUploadError) {
+      console.error('Error updating incident status:', ocrStatusUploadError)
+      return new Response(
+        JSON.stringify({ error: ocrStatusUploadError.message }),
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 500 
+        }
+      )
+    }
+
+    // Analyze PDF using AWS Textract
+    const textractConfig: TextractConfig = {
+      region: AWS_REGION,
+      accessKeyId: AWS_ACCESS_KEY_ID,
+      secretAccessKey: AWS_SECRET_ACCESS_KEY
+    }
+    
+    const jobId = await startTextractJob(
+      textractConfig, 
+      { bucket: s3Config.bucket, key: s3Key }
+    )
+    
+    const result = await pollTextractJob(
+      textractConfig,
+      jobId,
+      600,
+      1000,
+    )
+    
+    console.log("Textract processing complete")
+
+    console.log("fetching categories for user")
+    const { data: categoriesData, error: categoriesError } = await supabaseAdmin
+      .from('categories')
+      .select('*')
+      .eq('created_by', record.uploaded_by)
+    
+    if (categoriesError) {
+      console.error('Error fetching categories:', categoriesError)
+      return new Response(
+        JSON.stringify({ error: `Error fetching categories: ${categoriesError.message}` }),
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 500 
+        }
+      )
+    }
+
+    console.log("Categories fetched successfully:", categoriesData)
+
+    const { classificationStatusUploadError } = await updateIncidentStatus(supabaseAdmin, record.id, "Processing (Classification)")
+    if (classificationStatusUploadError) {
+      console.error('Error updating incident status:', classificationStatusUploadError)
+      return new Response(
+        JSON.stringify({ error: classificationStatusUploadError.message }),
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 500 
+        }
+      )
+    }
+    
+    const incidentPopulator = IncidentPopulatorFactory.createIncidentPopulator(organization, ANTHROPIC_API_KEY)
+    const updatedIncident = await incidentPopulator.populateIncidentDetails(result.data, record, categoriesData)
+
+    console.log("Updated incident details:", updatedIncident)
+    
+    const { error } = await supabaseAdmin
+      .from('incidents')
+      .update(updatedIncident)
+      .eq('id', record.id)
+      .select()
+
+    if (error) {
+      console.error('Error updating incident status:', error)
+      return new Response(
+        JSON.stringify({ error: error.message }),
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 500 
+        }
+      )
+    }
+
+    return new Response(
+      JSON.stringify({ 
+        message: 'Status was updated successfully',
+        jobId: result.jobId
+      }),
+      { 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200 
+      }
+    )
+  } catch (error) {
+    console.error('Error processing request:', error)
+    return new Response(
+      JSON.stringify({ error: 'Internal Server Error', details: error.message }),
+      { 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 500 
+      }
+    )
+  }
+})
+
+async function updateIncidentStatus(supabaseAdmin: any, incidentId: string, status: string) {
+  return await supabaseAdmin
+    .from('incidents')
+    .update({ status: status })
+    .eq('id', incidentId)
+    .select()
+}
