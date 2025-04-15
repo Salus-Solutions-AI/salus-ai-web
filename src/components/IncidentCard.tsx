@@ -40,6 +40,7 @@ const IncidentCard = ({ incident, onView, onDownload, onDelete }: IncidentCardPr
         incident.isClery && "border-2 border-[#8B5CF6] bg-[#FEF7CD]/20",
         incident.needsMoreInfo && "border-l-4 border-amber-500 bg-[#FFEBEB]/40"
       )}
+      role="incident-card"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       onClick={handleCardClick}
