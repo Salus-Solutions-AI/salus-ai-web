@@ -38,7 +38,6 @@ export async function uploadToS3(
   });
 
   await s3Client.send(uploadCommand);
-  console.log("File uploaded to S3 successfully");
   
   return key;
 }

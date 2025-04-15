@@ -1,8 +1,10 @@
 
+# This is your Supabase configuration file
+# For local development, the local project is used automatically
+# For production, the production project is used
+
+# Local development project ID
 project_id = "uhudxpdzeddkqebgeqjn"
 
-[functions.process-incident]
-verify_jwt = true
-
-[functions.send-contact-email]
-verify_jwt = false
+# Production project ID (used when deployed to production environment)
+# production_project_id = "cklbbxfegppikhusrvzm"

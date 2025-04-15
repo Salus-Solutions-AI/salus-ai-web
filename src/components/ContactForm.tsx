@@ -15,6 +15,7 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { SUPABASE_URL } from '@/integrations/supabase/config';
 
 const formSchema = z.object({
   firstName: z.string().min(1, 'First name is required'),
@@ -43,7 +44,7 @@ const ContactForm = () => {
     setIsSubmitting(true);
     
     try {
-      const response = await fetch('https://cklbbxfegppikhusrvzm.supabase.co/functions/v1/send-contact-email', {
+      const response = await fetch(SUPABASE_URL + '/functions/v1/send-contact-email', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

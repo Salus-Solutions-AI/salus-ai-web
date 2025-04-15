@@ -13,32 +13,33 @@ export class IncidentPopulatorFactory {
    * Creates an IncidentPopulator instance based on the given organization
    * 
    * @param organization - The organization identifier
+   * @param aiApiKey - API key for AI services (Anthropic or OpenAI)
+   * @param aiService - AI service to use ('anthropic' or 'openai')
    * @returns The appropriate IncidentPopulator for the organization
    */
-  static createIncidentPopulator(organization: string | null, anthropicApiKey: string): IncidentPopulator {
+  static createIncidentPopulator(
+    organization: string | null, 
+    aiApiKey: string,
+    aiService: string = 'anthropic'
+  ): IncidentPopulator {
     if (!organization) {
-      console.log("No organization found, using default populator");
       return new DefaultIncidentPopulator();
     }
     
     const normalizedOrg = organization.toLowerCase().trim();
-    
+   
     if (normalizedOrg == "mclennan_cc") {
-      console.log("Using McLennan Community College populator");
-      return new McLennanIncidentPopulator(anthropicApiKey);
+      return new McLennanIncidentPopulator(aiApiKey, aiService);
     }
 
     if (normalizedOrg == "unh") {
-      console.log("Using UNH populator");
       return new UNHIncidentPopulator();
     }
 
     if (normalizedOrg == "long beach") {
-      console.log("Using Long Beach populator");
       return new LongBeachIncidentPopulator();
     }
     
-    console.log(`No specific populator found for '${organization}', using default populator`);
     return new DefaultIncidentPopulator();
   }
 }

@@ -1,17 +1,19 @@
 
 import { IncidentPopulator } from "./IncidentPopulator.ts";
-import { getMockIncidentData } from "../incidentUtils.ts";
-import { queryAnthropic } from "../anthropicUtils.ts";
+import { queryAnthropic } from "../utils/anthropicUtils.ts";
+import { queryOpenAI } from "../utils/openAiUtils.ts";
 
 /**
  * McLennan Community College implementation of IncidentPopulator
  * Populates incident details according to MCC's format
  */
 export class McLennanIncidentPopulator implements IncidentPopulator {
-  private anthropicApiKey: string;
+  private aiApiKey: string;
+  private aiService: string;
 
-  constructor(anthropicApiKey: string) {
-    this.anthropicApiKey = anthropicApiKey;
+  constructor(aiApiKey: string, aiService: string = 'anthropic') {
+    this.aiApiKey = aiApiKey;
+    this.aiService = aiService;
   }
 
   /**
@@ -32,16 +34,23 @@ export class McLennanIncidentPopulator implements IncidentPopulator {
       description: "Use this category if the incident does not fit into any of the other categories."
     });
 
-    const classificationResponse = await queryAnthropic(
-      this.anthropicApiKey,
-      textractFormData["Description of crime or incident:"],
-      categories.map(element => {
-        return {
-          name: element.name,
-          description: element.description,
-        }
-      })
-    );
+    const classificationResponse = this.aiService === 'openai'
+      ? await queryOpenAI(
+          this.aiApiKey,
+          textractFormData["Description of crime or incident:"],
+          categories.map(element => ({
+            name: element.name,
+            description: element.description,
+          }))
+        )
+      : await queryAnthropic(
+          this.aiApiKey,
+          textractFormData["Description of crime or incident:"],
+          categories.map(element => ({
+            name: element.name,
+            description: element.description,
+          }))
+        );
 
     return {
       ...incident,

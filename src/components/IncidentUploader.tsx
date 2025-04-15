@@ -8,6 +8,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { v4 as uuidv4 } from 'uuid';
 import { IncidentProcessingStatus } from '@/types';
+import { Label } from '@/components/ui/label';
 
 const IncidentUploader = ({ onUploadSuccess }) => {
   const [files, setFiles] = useState<File[]>([]);
@@ -213,6 +214,7 @@ const IncidentUploader = ({ onUploadSuccess }) => {
           onDrop={handleDrop}
           onClick={() => document.getElementById('file-upload')?.click()}
         >
+          <Label htmlFor="file-upload" className="sr-only">file-upload</Label>
           <input
             id="file-upload"
             type="file"
@@ -220,6 +222,7 @@ const IncidentUploader = ({ onUploadSuccess }) => {
             onChange={handleFileChange}
             className="hidden"
             multiple
+            aria-label="file-upload"
           />
           
           <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">

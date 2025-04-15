@@ -29,7 +29,6 @@ import {
 } from '@/components/ui/table';
 import { Category } from '@/types';
 import { getCategories, getDefaultCategories, getProfile, insertCategories, setCreatedCategories } from '@/integrations/supabase/tableUtils';
-import { set } from 'date-fns';
 
 const Categories = () => {
   const { user } = useAuth();
@@ -56,10 +55,13 @@ const Categories = () => {
         if (defaultCategoriesError) throw defaultCategoriesError;
 
         var categories = defaultCategoriesData.map((defaultCategory) => {
-          delete defaultCategory.id;
-          defaultCategory.created_by = user.id;
-          defaultCategory.created_at = new Date().toISOString();
-          return defaultCategory;
+          // Fix: Remove property that doesn't exist and map to the correct property name
+          return {
+            name: defaultCategory.name,
+            description: defaultCategory.description,
+            created_by: user.id,
+            created_at: new Date().toISOString()
+          };
         });
 
         var { error: insertError } = await insertCategories(categories);
@@ -72,7 +74,16 @@ const Categories = () => {
       var { data: categoriesData, error: categoriesError } = await getCategories();
       if (categoriesError) throw categoriesError;
       
-      setCategories(categoriesData);
+      // Map database format (snake_case) to TypeScript interface format (camelCase)
+      const formattedCategories: Category[] = categoriesData.map(cat => ({
+        id: cat.id,
+        name: cat.name,
+        description: cat.description || '',
+        createdAt: cat.created_at,
+        createdBy: cat.created_by || ''
+      }));
+      
+      setCategories(formattedCategories);
     } catch (error) {
       console.error('Error fetching categories:', error);
       toast({

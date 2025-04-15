@@ -31,8 +31,6 @@ export async function startTextractJob(
   config: TextractConfig, 
   s3Object: S3Object
 ): Promise<string> {
-  console.log('Sending command to Textract...');
-  
   const textractClient = new TextractClient({
     region: config.region,
     credentials: {
@@ -58,7 +56,6 @@ export async function startTextractJob(
     throw new Error("Failed to start Textract job - no JobId returned");
   }
   
-  console.log(`Textract job started with ID: ${jobId}`);
   return jobId;
 }
 
@@ -91,8 +88,6 @@ export async function pollTextractJob(
     await new Promise(resolve => setTimeout(resolve, pollingIntervalMs));
     attempt++;
     
-    console.log(`Checking job status, attempt ${attempt}/${maxAttempts}`);
-    
     // Check job status
     const getCommand = new GetDocumentAnalysisCommand({
       JobId: jobId
@@ -108,8 +103,6 @@ export async function pollTextractJob(
 
       // Get additional results if paginated
       while (nextToken) {
-        console.log("Getting next page of results...");
-        
         const nextPageCommand = new GetDocumentAnalysisCommand({
           JobId: jobId,
           NextToken: nextToken

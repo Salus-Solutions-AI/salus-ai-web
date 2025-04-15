@@ -1,11 +1,8 @@
 
 import { ArrowRight } from 'lucide-react';
-import { Button } from "@/components/ui/button";
-import { useNavigate } from 'react-router-dom';
 import { useEffect, useState, useRef } from 'react';
 
 const Hero = () => {
-  const navigate = useNavigate();
   const imageRef = useRef<HTMLImageElement>(null);
   const [isVisible, setIsVisible] = useState(false);
 

@@ -1,5 +1,6 @@
+
 import { IncidentPopulator } from "./IncidentPopulator.ts";
-import { getMockIncidentData } from "../incidentUtils.ts";
+import { getMockIncidentData } from "../utils/incidentUtils.ts";
 import { mock } from "node:test";
 
 /**

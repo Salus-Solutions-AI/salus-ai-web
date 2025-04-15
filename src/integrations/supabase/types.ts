@@ -51,7 +51,7 @@ export type Database = {
         Insert: {
           created_at?: string
           description: string
-          id?: number
+          id: number
           name: string
         }
         Update: {
@@ -125,7 +125,7 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "reports_uploaded_by_fkey1"
+            foreignKeyName: "incidents_uploaded_by_fkey"
             columns: ["uploaded_by"]
             isOneToOne: false
             referencedRelation: "profiles"
@@ -146,7 +146,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           file_path: string
-          id?: number
+          id: number
           title: string
           url: string
         }
@@ -160,7 +160,7 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "reports_created_by_fkey"
+            foreignKeyName: "logs_created_by_fkey"
             columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "profiles"

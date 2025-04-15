@@ -44,7 +44,7 @@ const Index = () => {
           <div className="text-center mb-16">
             <h2 className="text-3xl font-bold mb-4">Features</h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Our platform streamlines the entire incident reporting process, from automatic categorization to log generation.
+              Our platform streamlines the entire Clery compliance process, from automatic categorization to log generation.
             </p>
           </div>
           

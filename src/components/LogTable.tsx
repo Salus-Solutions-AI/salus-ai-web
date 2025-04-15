@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Search, Flag, FileSpreadsheet } from 'lucide-react';
 import { Button } from "@/components/ui/button";
@@ -11,7 +10,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Incident } from '@/types';
+import { Incident, IncidentProcessingStatus } from '@/types';
 import { toast } from '@/components/ui/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { getTodaysIncidents } from '@/integrations/supabase/tableUtils';
@@ -25,7 +24,7 @@ const LogTable = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [showCleryOnly, setShowCleryOnly] = useState(false);
   const { user } = useAuth();
-  
+
   const fetchIncidents = async () => {
     setIsLoading(true);
     
@@ -49,7 +48,7 @@ const LogTable = () => {
             location: incident.location,
             explanation: incident.explanation,
             summary: incident.summary,
-            status: incident.status,
+            status: incident.status as IncidentProcessingStatus,
             number: incident.number,
             pdfUrl: incident.pdf_url || '',
             filePath: incident.file_path || '',
@@ -76,7 +75,7 @@ const LogTable = () => {
 
   useEffect(() => {
     fetchIncidents();
-  }, [user]);
+  }, [user?.id]);
 
   const handleDownloadExcel = async () => {
     if (incidents.length === 0) {
@@ -138,7 +137,6 @@ const LogTable = () => {
     return matchesSearch && matchesClery;
   });
 
-  // Define the table headers we want to display
   const columns = [
     { key: 'timeReported', label: 'Time Reported' },
     { key: 'category', label: 'Nature of Crime' },
@@ -193,7 +191,7 @@ const LogTable = () => {
       </div>
       
       {isLoading ? (
-        <div className="w-full h-96 bg-secondary/30 animate-pulse rounded-lg" />
+        <div className="w-full h-96 bg-secondary/30 animate-pulse rounded-lg" role="status" aria-label="Loading incidents" />
       ) : (
         <div className="bg-white rounded-lg border shadow-sm overflow-hidden">
           {filteredIncidents.length > 0 ? (
@@ -213,7 +211,6 @@ const LogTable = () => {
                 </TableHeader>
                 <TableBody>
                   {filteredIncidents.map((incident, index) => {
-                    // Format date and time for display
                     const incidentDate = new Date(incident.date);
                     const formattedDate = incidentDate.toLocaleDateString();
                     const formattedTime = incidentDate.toLocaleTimeString('en-US', {

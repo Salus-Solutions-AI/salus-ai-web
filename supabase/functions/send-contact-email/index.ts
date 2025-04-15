@@ -73,3 +73,6 @@ const handler = async (req: Request): Promise<Response> => {
 };
 
 serve(handler);
+
+// Export handler for testing purposes
+export default handler;

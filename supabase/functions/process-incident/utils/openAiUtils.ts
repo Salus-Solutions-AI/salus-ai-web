@@ -1,3 +1,4 @@
+
 interface Category {
     name: string;
     description: string;
@@ -10,19 +11,17 @@ interface ClassificationResult {
     isClery: boolean;
 }
 
-export async function queryAnthropic(apiKey, documentText, categories): Promise<ClassificationResult> {
+export async function queryOpenAI(apiKey: string, documentText: string, categories: Category[]): Promise<ClassificationResult> {
     const prompt = createClassificationPrompt(documentText, categories);
     
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01'
+        'Authorization': `Bearer ${apiKey}`
       },
       body: JSON.stringify({
-        model: "claude-3-7-sonnet-20250219",
-        max_tokens: 1000,
+        model: "gpt-4o-mini",
         messages: [
           { role: "user", content: prompt }
         ],
@@ -32,11 +31,11 @@ export async function queryAnthropic(apiKey, documentText, categories): Promise<
 
     if (!response.ok) {
       const errorData = await response.text();
-      throw new Error(`Anthropic API error: ${response.status} ${errorData}`);
+      throw new Error(`OpenAI API error: ${response.status} ${errorData}`);
     }
 
     const data = await response.json();
-    return parseClassificationResponse(data.content[0].text);
+    return parseClassificationResponse(data.choices[0].message.content);
 }
 
 function createClassificationPrompt(documentText: string, categories: Category[]): string {
@@ -70,8 +69,6 @@ function createClassificationPrompt(documentText: string, categories: Category[]
 }
 
 function parseClassificationResponse(responseText: string): ClassificationResult {
-    console.log("Anthropic response:", responseText);
-
     const categoryMatch = responseText.match(/Classification decision: (.+?)$/mi);
     const locationMatch = responseText.match(/Location: (.+?)$/mi);
     const isCleryMatch = responseText.match(/IsClery: (.+?)$/mi);

@@ -18,12 +18,6 @@ import {
   Legend
 } from 'recharts';
 import { toast } from '@/components/ui/use-toast';
-import { cn } from '@/lib/utils';
-import { 
-  ChartContainer, 
-  ChartTooltip, 
-  ChartTooltipContent 
-} from '@/components/ui/chart';
 
 // Updated cohesive color scheme that matches the website's aesthetic
 const CLERY_COLORS = ['#8B5CF6', '#222222']; // Purple for Clery, Dark grey for non-Clery
@@ -123,7 +117,7 @@ const IncidentStats = () => {
     };
 
     fetchIncidents();
-  }, [user]);
+  }, [user?.id]);
 
   const processData = (incidents: Incident[]) => {
     // Process category data
@@ -203,7 +197,7 @@ const IncidentStats = () => {
           <CardContent>
             {isLoading ? (
               <div className="h-80 flex items-center justify-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary" role="loader"></div>
               </div>
             ) : incidents.length > 0 ? (
               <div className="h-80">
@@ -252,7 +246,7 @@ const IncidentStats = () => {
           <CardContent>
             {isLoading ? (
               <div className="h-80 flex items-center justify-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary" role="loader"></div>
               </div>
             ) : incidents.length > 0 ? (
               <div className="h-80">

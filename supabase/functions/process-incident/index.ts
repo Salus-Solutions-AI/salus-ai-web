@@ -1,8 +1,7 @@
-
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'npm:@supabase/supabase-js'
-import { uploadToS3, type S3Config } from './s3Utils.ts'
-import { startTextractJob, pollTextractJob, type TextractConfig } from './textractUtils.ts'
+import { uploadToS3, type S3Config } from './utils/s3Utils.ts'
+import { startTextractJob, pollTextractJob, type TextractConfig } from './utils/textractUtils.ts'
 import { IncidentPopulatorFactory } from './templates/IncidentPopulatorFactory.ts'
 
 const corsHeaders = {
@@ -21,7 +20,23 @@ serve(async (req) => {
     const AWS_SECRET_ACCESS_KEY = Deno.env.get('AWS_SECRET_ACCESS_KEY') || ''
     const AWS_REGION = Deno.env.get('AWS_REGION') || 'us-east-1'
 
+    // Get AI service configuration
     const ANTHROPIC_API_KEY = Deno.env.get('ANTHROPIC_API_KEY') || ''
+    const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY') || ''
+    const AI_SERVICE = Deno.env.get('AI_SERVICE') || 'anthropic' // Default to anthropic if not specified
+    
+    // Select the appropriate API key based on the service
+    const aiApiKey = AI_SERVICE === 'openai' ? OPENAI_API_KEY : ANTHROPIC_API_KEY
+    
+    if (!aiApiKey) {
+      return new Response(
+        JSON.stringify({ error: `API key for ${AI_SERVICE} is not configured` }),
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 500 
+        }
+      )
+    }
     
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
@@ -47,8 +62,6 @@ serve(async (req) => {
       )
     }
 
-    console.log("Processing incident record:", record.id)
-
     const { uploadStatusUpdateError } = await updateIncidentStatus(supabaseAdmin, record.id, "Processing (Upload)")
     if (uploadStatusUpdateError) {
       console.error('Error updating incident status:', uploadStatusUpdateError)
@@ -73,7 +86,6 @@ serve(async (req) => {
     }
     
     const organization = profileData?.organization || null
-    console.log(`User organization: ${organization || 'Not specified'}`)
     
     // Download the document from Supabase storage
     const { data, error: downloadError } = await supabaseAdmin
@@ -98,8 +110,6 @@ serve(async (req) => {
     // Convert file to array buffer and then to Uint8Array
     const fileBuffer = await data.arrayBuffer()
     const documentBytes = new Uint8Array(fileBuffer)
-    
-    console.log(`File downloaded successfully, size: ${documentBytes.length} bytes`)
     
     // Configure S3 and upload the document
     const s3Config: S3Config = {
@@ -146,9 +156,6 @@ serve(async (req) => {
       1000,
     )
     
-    console.log("Textract processing complete")
-
-    console.log("fetching categories for user")
     const { data: categoriesData, error: categoriesError } = await supabaseAdmin
       .from('categories')
       .select('*')
@@ -165,8 +172,6 @@ serve(async (req) => {
       )
     }
 
-    console.log("Categories fetched successfully:", categoriesData)
-
     const { classificationStatusUploadError } = await updateIncidentStatus(supabaseAdmin, record.id, "Processing (Classification)")
     if (classificationStatusUploadError) {
       console.error('Error updating incident status:', classificationStatusUploadError)
@@ -179,7 +184,8 @@ serve(async (req) => {
       )
     }
     
-    const incidentPopulator = IncidentPopulatorFactory.createIncidentPopulator(organization, ANTHROPIC_API_KEY)
+    console.log(`Using AI service: ${AI_SERVICE}`)
+    const incidentPopulator = IncidentPopulatorFactory.createIncidentPopulator(organization, aiApiKey, AI_SERVICE)
     const updatedIncident = await incidentPopulator.populateIncidentDetails(result.data, record, categoriesData)
 
     console.log("Updated incident details:", updatedIncident)

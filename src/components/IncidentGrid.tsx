@@ -75,7 +75,6 @@ const IncidentGrid = ({ refresh, refreshQueuedOnly, queuedIncidents, setQueuedIn
             needsMoreInfo: incident.needs_more_info || false,
           }));
           
-          // Separate queued incidents from other incidents
           const queued = formattedIncidents.filter(
             incident => incident.status !== IncidentProcessingStatus.PENDING && incident.status !== IncidentProcessingStatus.COMPLETED
           );
@@ -133,14 +132,12 @@ const IncidentGrid = ({ refresh, refreshQueuedOnly, queuedIncidents, setQueuedIn
             needsMoreInfo: incident.needs_more_info || false,
           }));
           
-          // Only update the queued incidents
           const queued = formattedIncidents.filter(
             incident => incident.status !== IncidentProcessingStatus.PENDING && incident.status !== IncidentProcessingStatus.COMPLETED
           );
           
           setQueuedIncidents(queued);
           
-          // If a queued incident has completed, refresh the full list
           const hasNewlyCompleted = queuedIncidents.some(oldQueuedIncident => 
             !queued.some(newQueuedIncident => 
               newQueuedIncident.id === oldQueuedIncident.id
@@ -159,7 +156,7 @@ const IncidentGrid = ({ refresh, refreshQueuedOnly, queuedIncidents, setQueuedIn
 
   useEffect(() => {
     fetchAllIncidents();
-  }, [user, refresh]);
+  }, [user?.id, refresh]);
 
   useEffect(() => {
     if (refreshQueuedOnly !== undefined) {
@@ -303,7 +300,7 @@ const IncidentGrid = ({ refresh, refreshQueuedOnly, queuedIncidents, setQueuedIn
       </div>
       
       {isLoading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6" role="status" aria-label="Loading incidents">
           {Array.from({ length: 6 }).map((_, index) => (
             <div 
               key={index} 
