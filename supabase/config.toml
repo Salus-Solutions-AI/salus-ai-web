@@ -8,3 +8,6 @@ project_id = "uhudxpdzeddkqebgeqjn"
 
 # Production project ID (used when deployed to production environment)
 # production_project_id = "cklbbxfegppikhusrvzm"
+
+[functions.send-contact-email]
+verify_jwt = false
