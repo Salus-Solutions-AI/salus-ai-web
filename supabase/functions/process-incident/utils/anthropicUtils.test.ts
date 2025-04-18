@@ -44,7 +44,7 @@ describe('Classification Utilities', () => {
     (global.fetch as any).mockResolvedValue(mockResponse);
 
     // Call the function
-    const result = await queryAnthropic(apiKey, documentText, categories);
+    const result = await queryAnthropic(apiKey, documentText, categories, "");
 
     // Verify fetch was called with correct params
     expect(global.fetch).toHaveBeenCalledWith('https://api.anthropic.com/v1/messages', {
@@ -71,7 +71,11 @@ describe('Classification Utilities', () => {
       category: 'Theft',
       location: 'Campus library',
       isClery: true,
-      explanation: 'This document is classified as Theft because it describes a laptop being stolen from the library on campus. The incident occurred on campus property which is within Clery geography.'
+      explanation: 'This document is classified as Theft because it describes a laptop being stolen from the library on campus. The incident occurred on campus property which is within Clery geography.',
+      date: 'Unknown',
+      time: 'Unknown',
+      number: 'Unknown',
+      summary: 'No summary provided.',
     });
   });
 
@@ -86,7 +90,7 @@ describe('Classification Utilities', () => {
     (global.fetch as any).mockResolvedValue(errorResponse);
 
     // Verify the function throws an error
-    await expect(queryAnthropic(apiKey, documentText, categories)).rejects.toThrow('Anthropic API error: 401 Invalid API key');
+    await expect(queryAnthropic(apiKey, documentText, categories, "")).rejects.toThrow('Anthropic API error: 401 Invalid API key');
   });
 
   it('should handle partial or malformed responses', async () => {
@@ -109,14 +113,18 @@ describe('Classification Utilities', () => {
 
     (global.fetch as any).mockResolvedValue(mockResponse);
     
-    const result = await queryAnthropic(apiKey, documentText, categories);
+    const result = await queryAnthropic(apiKey, documentText, categories, "");
     
     // It should set defaults for missing fields
     expect(result).toEqual({
       category: 'Theft',
       location: 'Unknown',
       isClery: false,
-      explanation: 'This is a theft incident.'
+      explanation: 'This is a theft incident.',
+      date: 'Unknown',
+      time: 'Unknown',
+      number: 'Unknown',
+      summary: 'No summary provided.',
     });
   });
 
@@ -142,7 +150,7 @@ describe('Classification Utilities', () => {
 
     (global.fetch as any).mockResolvedValue(mockResponse);
     
-    const result = await queryAnthropic(apiKey, documentText, categories);
+    const result = await queryAnthropic(apiKey, documentText, categories, "");
     
     expect(result.isClery).toBe(false);
     expect(result.category).toBe('Vandalism');
@@ -170,7 +178,7 @@ describe('Classification Utilities', () => {
 
     (global.fetch as any).mockResolvedValue(mockResponse);
     
-    const result = await queryAnthropic(apiKey, documentText, categories);
+    const result = await queryAnthropic(apiKey, documentText, categories, "");
     
     expect(result.category).toBe('Needs more info');
   });
@@ -179,7 +187,7 @@ describe('Classification Utilities', () => {
     // Mock a network error
     (global.fetch as any).mockRejectedValue(new Error('Network error'));
     
-    await expect(queryAnthropic(apiKey, documentText, categories)).rejects.toThrow('Network error');
+    await expect(queryAnthropic(apiKey, documentText, categories, "")).rejects.toThrow('Network error');
   });
 
   it('should parse completely unexpected responses', async () => {
@@ -198,14 +206,18 @@ describe('Classification Utilities', () => {
 
     (global.fetch as any).mockResolvedValue(mockResponse);
     
-    const result = await queryAnthropic(apiKey, documentText, categories);
+    const result = await queryAnthropic(apiKey, documentText, categories, "");
     
     // It should use default values
     expect(result).toEqual({
       category: 'Unknown',
       location: 'Unknown',
       explanation: 'Unable to classify incident.',
-      isClery: false
+      isClery: false,
+      date: 'Unknown',
+      time: 'Unknown',
+      number: 'Unknown',
+      summary: 'No summary provided.',
     });
   });
 });

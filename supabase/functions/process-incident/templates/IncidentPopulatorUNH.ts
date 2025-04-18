@@ -1,12 +1,22 @@
 
 import { IncidentPopulator } from "./IncidentPopulator.ts";
+import { getDocumentText, S3Object, TextractConfig } from "../utils/textractUtils.ts";
 import { getMockIncidentData } from "../utils/incidentUtils.ts";
-import { mock } from "node:test";
 
 /**
  * University of New Hampshire implementation of IncidentPopulator
  */
 export class UNHIncidentPopulator implements IncidentPopulator {
+  /**
+   * Runs basic OCR on the incident PDF to extract document text
+   * @param config 
+   * @param s3Object 
+   * @returns Document text as a string
+   */
+  async runOCR(config: TextractConfig, s3Object: S3Object): Promise<string> {
+    return getDocumentText(config, s3Object);
+  }
+
   /**
    * Populates incident details from Textract form data using default format
    * 

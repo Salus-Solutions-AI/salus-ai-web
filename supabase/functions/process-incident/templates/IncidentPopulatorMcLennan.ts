@@ -1,7 +1,9 @@
 
 import { IncidentPopulator } from "./IncidentPopulator.ts";
+import { pollAnalyzeDocumentJob, S3Object, startAnalyzeDocumentJob, TextractConfig, TextractJobResult } from "../utils/textractUtils.ts";
 import { queryAnthropic } from "../utils/anthropicUtils.ts";
 import { queryOpenAI } from "../utils/openAiUtils.ts";
+import { parseDate } from "../utils/dateUtils.ts";
 
 /**
  * McLennan Community College implementation of IncidentPopulator
@@ -14,6 +16,26 @@ export class McLennanIncidentPopulator implements IncidentPopulator {
   constructor(aiApiKey: string, aiService: string = 'anthropic') {
     this.aiApiKey = aiApiKey;
     this.aiService = aiService;
+  }
+
+  /**
+   * Runs OCR on the incident PDF to extract document form data
+   * @param config - Textract configuration
+   * @param s3Object - S3 object containing the incident PDF
+   * @returns Document form data
+   */
+  async runOCR(config: TextractConfig, s3Object: S3Object): Promise<TextractJobResult> {
+    const jobId = await startAnalyzeDocumentJob(
+      config, 
+      s3Object
+    )
+    
+    return pollAnalyzeDocumentJob(
+      config,
+      jobId,
+      600,
+      1000,
+    )
   }
 
   /**
@@ -41,7 +63,8 @@ export class McLennanIncidentPopulator implements IncidentPopulator {
           categories.map(element => ({
             name: element.name,
             description: element.description,
-          }))
+          })),
+          "",
         )
       : await queryAnthropic(
           this.aiApiKey,
@@ -49,7 +72,8 @@ export class McLennanIncidentPopulator implements IncidentPopulator {
           categories.map(element => ({
             name: element.name,
             description: element.description,
-          }))
+          })),
+          "",
         );
 
     return {
@@ -66,18 +90,4 @@ export class McLennanIncidentPopulator implements IncidentPopulator {
       needs_more_info: classificationResponse.category.includes("Needs more info"),
     };
   }
-}
-
-function parseDate(dateString: string): Date {
-  const cleanedDateString = dateString.replace(/(\d+)(st|nd|rd|th)/, '$1');
-  
-  // Parse the cleaned string into a Date object
-  const date = new Date(cleanedDateString);
-  
-  // Validate that the date is valid
-  if (isNaN(date.getTime())) {
-    throw new Error(`Invalid date string: ${dateString}`);
-  }
-  
-  return date;
 }

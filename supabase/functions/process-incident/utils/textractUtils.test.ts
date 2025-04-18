@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { 
-  startTextractJob, 
-  pollTextractJob,
+  startAnalyzeDocumentJob, 
+  pollAnalyzeDocumentJob,
   TextractConfig,
   S3Object 
 } from './textractUtils';
@@ -113,7 +113,7 @@ describe('Textract Utilities', () => {
         vi.mocked(TextractClient).mockImplementation(() => mockClient as unknown as TextractClient);
         
         // Call the function being tested
-        const jobId = await startTextractJob(config, s3Object);
+        const jobId = await startAnalyzeDocumentJob(config, s3Object);
         
         // Assert that the function returns the job ID
         expect(jobId).toBe(mockJobId);
@@ -153,7 +153,7 @@ describe('Textract Utilities', () => {
 
         
         // Verify the function throws an error
-        await expect(startTextractJob(config, s3Object)).rejects.toThrow(
+        await expect(startAnalyzeDocumentJob(config, s3Object)).rejects.toThrow(
           'Failed to start Textract job - no JobId returned'
         );
       });
@@ -167,11 +167,11 @@ describe('Textract Utilities', () => {
         vi.mocked(TextractClient).mockImplementation(() => mockClient as unknown as TextractClient);
         
         // Verify the function throws an error
-        await expect(startTextractJob(config, s3Object)).rejects.toThrow(errorMessage);
+        await expect(startAnalyzeDocumentJob(config, s3Object)).rejects.toThrow(errorMessage);
       });
     });
   
-  describe('pollTextractJob', () => {
+  describe('pollAnalyzeDocumentJob', () => {
     it('should successfully poll a Textract job until completion', async () => {
         // Setup mock responses for polling
         // First call - job still in progress
@@ -196,7 +196,7 @@ describe('Textract Utilities', () => {
         vi.useFakeTimers();
       
         // Start the polling (don't await yet)
-        const pollPromise = pollTextractJob(config, mockJobId, 2, 100);
+        const pollPromise = pollAnalyzeDocumentJob(config, mockJobId, 2, 100);
       
         // Fast-forward timers
         await vi.advanceTimersByTimeAsync(100);
@@ -257,7 +257,7 @@ describe('Textract Utilities', () => {
         vi.useFakeTimers();
         
         // Start the polling (don't await yet)
-        const pollPromise = pollTextractJob(config, mockJobId, 2, 100);
+        const pollPromise = pollAnalyzeDocumentJob(config, mockJobId, 2, 100);
         
         // Fast-forward timer
         await vi.advanceTimersByTimeAsync(100);
@@ -298,7 +298,7 @@ describe('Textract Utilities', () => {
 
         // Test with real timers and short interval
         await expect(
-            pollTextractJob(config, mockJobId, 1, 10)
+            pollAnalyzeDocumentJob(config, mockJobId, 1, 10)
         ).rejects.toThrow('Textract job failed: Document too large');
         
         // Verify the TextractClient was created
@@ -329,7 +329,7 @@ describe('Textract Utilities', () => {
         
         // Directly test with real timers but very short intervals
         await expect(
-            pollTextractJob(config, mockJobId, maxAttempts, 10)
+            pollAnalyzeDocumentJob(config, mockJobId, maxAttempts, 10)
         ).rejects.toThrow(`Textract job timed out after ${maxAttempts} attempts`);
         
         // Verify the TextractClient was created
@@ -358,7 +358,7 @@ describe('Textract Utilities', () => {
         // Use real timers for this test to avoid issues with rejected promises
         // Create promise with shorter polling interval for faster test
         await expect(
-            pollTextractJob(config, mockJobId, 1, 10)
+            pollAnalyzeDocumentJob(config, mockJobId, 1, 10)
         ).rejects.toThrow(errorMessage);
         
         // Verify the TextractClient was created

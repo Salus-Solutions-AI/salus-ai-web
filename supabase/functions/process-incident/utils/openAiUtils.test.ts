@@ -47,7 +47,7 @@ describe('OpenAI Classification Utilities', () => {
     (global.fetch as any).mockResolvedValue(mockResponse);
 
     // Call the function
-    const result = await queryOpenAI(apiKey, documentText, categories);
+    const result = await queryOpenAI(apiKey, documentText, categories, "");
 
     // Verify fetch was called with correct params
     expect(global.fetch).toHaveBeenCalledWith('https://api.openai.com/v1/chat/completions', {
@@ -73,7 +73,11 @@ describe('OpenAI Classification Utilities', () => {
       category: 'Theft',
       location: 'Campus library',
       isClery: true,
-      explanation: 'This document is classified as Theft because it describes a laptop being stolen from the library on campus. The incident occurred on campus property which is within Clery geography.'
+      explanation: 'This document is classified as Theft because it describes a laptop being stolen from the library on campus. The incident occurred on campus property which is within Clery geography.',
+      date: 'Unknown',
+      time: 'Unknown',
+      number: 'Unknown',
+      summary: 'No summary provided.',
     });
   });
 
@@ -88,7 +92,7 @@ describe('OpenAI Classification Utilities', () => {
     (global.fetch as any).mockResolvedValue(errorResponse);
 
     // Verify the function throws an error
-    await expect(queryOpenAI(apiKey, documentText, categories)).rejects.toThrow('OpenAI API error: 401 Invalid API key');
+    await expect(queryOpenAI(apiKey, documentText, categories, "")).rejects.toThrow('OpenAI API error: 401 Invalid API key');
   });
 
   it('should handle partial or malformed responses', async () => {
@@ -113,14 +117,18 @@ describe('OpenAI Classification Utilities', () => {
 
     (global.fetch as any).mockResolvedValue(mockResponse);
     
-    const result = await queryOpenAI(apiKey, documentText, categories);
+    const result = await queryOpenAI(apiKey, documentText, categories, "");
     
     // It should set defaults for missing fields
     expect(result).toEqual({
       category: 'Theft',
       location: 'Unknown',
       isClery: false,
-      explanation: 'This is a theft incident.'
+      explanation: 'This is a theft incident.',
+      date: 'Unknown',
+      time: 'Unknown',
+      number: 'Unknown',
+      summary: 'No summary provided.',
     });
   });
 
@@ -148,7 +156,7 @@ describe('OpenAI Classification Utilities', () => {
 
     (global.fetch as any).mockResolvedValue(mockResponse);
     
-    const result = await queryOpenAI(apiKey, documentText, categories);
+    const result = await queryOpenAI(apiKey, documentText, categories, "");
     
     expect(result.isClery).toBe(false);
     expect(result.category).toBe('Vandalism');

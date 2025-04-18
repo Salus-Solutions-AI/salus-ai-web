@@ -1,7 +1,7 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'npm:@supabase/supabase-js'
 import { uploadToS3, type S3Config } from './utils/s3Utils.ts'
-import { startTextractJob, pollTextractJob, type TextractConfig } from './utils/textractUtils.ts'
+import { startAnalyzeDocumentJob, pollAnalyzeDocumentJob, type TextractConfig } from './utils/textractUtils.ts'
 import { IncidentPopulatorFactory } from './templates/IncidentPopulatorFactory.ts'
 
 const corsHeaders = {
@@ -119,10 +119,8 @@ serve(async (req) => {
       bucket: 'salus-textract'
     }
     
-    // Generate a unique S3 key
-    const s3Key = `textract-processing/${record.id}`
-    
     // Upload to S3
+    const s3Key = `textract-processing/${record.id}`
     await uploadToS3(s3Config, s3Key, documentBytes)
     
     const { ocrStatusUploadError } = await updateIncidentStatus(supabaseAdmin, record.id, "Processing (OCR)")
@@ -137,25 +135,22 @@ serve(async (req) => {
       )
     }
 
+    const incidentPopulator = IncidentPopulatorFactory.createIncidentPopulator(organization, aiApiKey, AI_SERVICE)
+
     // Analyze PDF using AWS Textract
     const textractConfig: TextractConfig = {
       region: AWS_REGION,
       accessKeyId: AWS_ACCESS_KEY_ID,
       secretAccessKey: AWS_SECRET_ACCESS_KEY
     }
+
+    const s3Object = {
+      bucket: s3Config.bucket,
+      key: s3Key,
+    }
     
-    const jobId = await startTextractJob(
-      textractConfig, 
-      { bucket: s3Config.bucket, key: s3Key }
-    )
-    
-    const result = await pollTextractJob(
-      textractConfig,
-      jobId,
-      600,
-      1000,
-    )
-    
+    const result = await incidentPopulator.runOCR(textractConfig, s3Object)
+
     const { data: categoriesData, error: categoriesError } = await supabaseAdmin
       .from('categories')
       .select('*')
@@ -184,12 +179,8 @@ serve(async (req) => {
       )
     }
     
-    console.log(`Using AI service: ${AI_SERVICE}`)
-    const incidentPopulator = IncidentPopulatorFactory.createIncidentPopulator(organization, aiApiKey, AI_SERVICE)
     const updatedIncident = await incidentPopulator.populateIncidentDetails(result.data, record, categoriesData)
 
-    console.log("Updated incident details:", updatedIncident)
-    
     const { error } = await supabaseAdmin
       .from('incidents')
       .update(updatedIncident)

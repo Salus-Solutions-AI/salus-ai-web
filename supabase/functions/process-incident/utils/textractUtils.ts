@@ -1,5 +1,6 @@
 
 import { 
+  DetectDocumentTextCommand,
   GetDocumentAnalysisCommand, 
   StartDocumentAnalysisCommand, 
   TextractClient
@@ -22,22 +23,57 @@ export interface S3Object {
 }
 
 /**
- * Starts a Textract job to detect text in a document stored in S3
+ * Calls Amazon Textract to detect text in a document stored in S3
+ * @param config - Textract configuration parameters
+ * @param s3Object - The S3 object to process
+ * @returns Document text as a string
+ */
+export async function getDocumentText(
+  config: TextractConfig,
+  s3Object: S3Object
+): Promise<string> {
+  const textractClient = buildClient(config);
+
+  const detectTextCommand = new DetectDocumentTextCommand({
+    Document: {
+      S3Object: {
+        Bucket: s3Object.bucket,
+        Name: s3Object.key,
+      }
+    }
+  });
+
+  try {
+    const detectTextResponse = await textractClient.send(detectTextCommand);
+    
+    // Extract and combine all detected text blocks
+    let extractedText = '';
+    if (detectTextResponse.Blocks) {
+      detectTextResponse.Blocks.forEach(block => {
+        if (block.BlockType === 'LINE' && block.Text) {
+          extractedText += block.Text + '\n';
+        }
+      });
+    }
+    
+    return extractedText;
+  } catch (error) {
+    console.error('Error extracting text from PDF:', error);
+    throw error;
+  }
+}
+
+/**
+ * Starts an Amazon Textract job to analyze a document stored in S3
  * @param config - Textract configuration parameters
  * @param s3Object - The S3 object to process
  * @returns Promise resolving to the Textract job ID
  */
-export async function startTextractJob(
+export async function startAnalyzeDocumentJob(
   config: TextractConfig, 
   s3Object: S3Object
 ): Promise<string> {
-  const textractClient = new TextractClient({
-    region: config.region,
-    credentials: {
-      accessKeyId: config.accessKeyId,
-      secretAccessKey: config.secretAccessKey,
-    },
-  });
+  const textractClient = buildClient(config);
 
   const startCommand = new StartDocumentAnalysisCommand({
     DocumentLocation: {
@@ -67,19 +103,13 @@ export async function startTextractJob(
  * @param pollingIntervalMs - Interval between polling attempts in milliseconds
  * @returns Promise resolving to the Textract job results
  */
-export async function pollTextractJob(
+export async function pollAnalyzeDocumentJob(
   config: TextractConfig,
   jobId: string,
   maxAttempts: number = 600,
   pollingIntervalMs: number = 1000
 ): Promise<TextractJobResult> {
-  const textractClient = new TextractClient({
-    region: config.region,
-    credentials: {
-      accessKeyId: config.accessKeyId,
-      secretAccessKey: config.secretAccessKey,
-    },
-  });
+  const textractClient = buildClient(config);
   
   let jobComplete = false;
   let attempt = 0;
@@ -128,6 +158,16 @@ export async function pollTextractJob(
   }
   
   throw new Error("Unexpected error in Textract job polling");
+}
+
+function buildClient(config: TextractConfig) {
+  return new TextractClient({
+    region: config.region,
+    credentials: {
+      accessKeyId: config.accessKeyId,
+      secretAccessKey: config.secretAccessKey,
+    },
+  });
 }
 
 interface FormField {

@@ -2,8 +2,6 @@
 import { IncidentPopulator } from "./IncidentPopulator.ts";
 import { McLennanIncidentPopulator } from "./IncidentPopulatorMcLennan.ts";
 import { DefaultIncidentPopulator } from "./IncidentPopulatorDefault.ts";
-import { UNHIncidentPopulator } from "./IncidentPopulatorUNH.ts";
-import { LongBeachIncidentPopulator } from "./IncidentPopulatorLongBeach.ts";
 
 /**
  * Factory class to create the appropriate IncidentPopulator based on organization
@@ -23,23 +21,14 @@ export class IncidentPopulatorFactory {
     aiService: string = 'anthropic'
   ): IncidentPopulator {
     if (!organization) {
-      return new DefaultIncidentPopulator();
+      return new DefaultIncidentPopulator(aiApiKey, aiService);
     }
     
     const normalizedOrg = organization.toLowerCase().trim();
-   
     if (normalizedOrg == "mclennan_cc") {
       return new McLennanIncidentPopulator(aiApiKey, aiService);
     }
 
-    if (normalizedOrg == "unh") {
-      return new UNHIncidentPopulator();
-    }
-
-    if (normalizedOrg == "long beach") {
-      return new LongBeachIncidentPopulator();
-    }
-    
-    return new DefaultIncidentPopulator();
+    return new DefaultIncidentPopulator(aiApiKey, aiService);
   }
 }
