@@ -66,7 +66,6 @@ const Account = () => {
 
   useEffect(() => {
     if (user && profile) {
-      console.log("Profile data:", profile); // Debug log to see profile data
       profileForm.reset({
         name: profile.full_name || '',
         email: user.email || '',
