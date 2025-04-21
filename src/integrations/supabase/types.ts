@@ -76,6 +76,7 @@ export type Database = {
           notes: string | null
           number: string | null
           pdf_url: string | null
+          requires_timely_warning: boolean | null
           status: string
           summary: string | null
           time_str: string | null
@@ -96,6 +97,7 @@ export type Database = {
           notes?: string | null
           number?: string | null
           pdf_url?: string | null
+          requires_timely_warning?: boolean | null
           status?: string
           summary?: string | null
           time_str?: string | null
@@ -116,6 +118,7 @@ export type Database = {
           notes?: string | null
           number?: string | null
           pdf_url?: string | null
+          requires_timely_warning?: boolean | null
           status?: string
           summary?: string | null
           time_str?: string | null

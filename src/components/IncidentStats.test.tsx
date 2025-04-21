@@ -1,4 +1,3 @@
-
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '../test/utils/test-utils';
 import IncidentStats from './IncidentStats';
@@ -120,7 +119,8 @@ describe('IncidentStats', () => {
         full_name: incident.uploadedBy
       },
       is_clery: incident.isClery,
-      needs_more_info: incident.needsMoreInfo
+      needs_more_info: incident.needsMoreInfo,
+      requires_timely_warning: incident.requiresTimelyWarning
     }));
     
     (getIncidents as any).mockResolvedValue({ 

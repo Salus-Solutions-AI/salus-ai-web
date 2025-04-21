@@ -1,7 +1,6 @@
-
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FileText, MoreHorizontal, Download, Eye, Trash2, Tag, MapPin, Calendar, Flag, AlertTriangle } from 'lucide-react';
+import { FileText, MoreHorizontal, Download, Eye, Trash2, Tag, MapPin, Calendar, Flag, AlertTriangle, Shield } from 'lucide-react';
 import { 
   DropdownMenu,
   DropdownMenuContent,
@@ -38,7 +37,8 @@ const IncidentCard = ({ incident, onView, onDownload, onDelete }: IncidentCardPr
         "bg-white border rounded-lg overflow-hidden transition-all duration-300 card-hover cursor-pointer",
         isHovered ? "shadow-elevated" : "shadow-sm",
         incident.isClery && "border-2 border-[#8B5CF6] bg-[#FEF7CD]/20",
-        incident.needsMoreInfo && "border-l-4 border-amber-500 bg-[#FFEBEB]/40"
+        incident.needsMoreInfo && "border-l-4 border-amber-500 bg-[#FFEBEB]/40",
+        incident.requiresTimelyWarning && "border-l-4 border-red-500 bg-red-50/40"
       )}
       role="incident-card"
       onMouseEnter={() => setIsHovered(true)}
@@ -120,6 +120,12 @@ const IncidentCard = ({ incident, onView, onDownload, onDelete }: IncidentCardPr
             <Badge variant="outline" className="bg-amber-100 text-amber-800 border-amber-200">
               <AlertTriangle className="mr-1 h-3 w-3" />
               Needs Info
+            </Badge>
+          )}
+          {incident.requiresTimelyWarning && (
+            <Badge variant="outline" className="bg-red-100 text-red-800 border-red-200">
+              <Shield className="mr-1 h-3 w-3" />
+              Timely Warning
             </Badge>
           )}
         </div>

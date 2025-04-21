@@ -15,6 +15,7 @@ export function getMockIncidentData(title: string) {
   let summary = "A female student was in the 3rd floor common area of West Quad Resident Hall when a male acquantaince initiated unwanted physical contact. The suspect, who was attending a gathering in the same area, allegedly touched the victim innaproriately despite her repeated attempts to move away.";
   let isClery = true;
   let needsMoreInfo = false;
+  let requiresTimelyWarning = false;
   
   if (title.includes("NonClery")) {
     number = "UM-VNDL-2025-53";
@@ -33,6 +34,7 @@ export function getMockIncidentData(title: string) {
     summary = "There was an altercation between two individuals on the public sidewalk bordering the university campus at Reginald Hall.";
     isClery = false;
     needsMoreInfo = true;
+    requiresTimelyWarning = true;
   }
   
   return {
@@ -45,6 +47,7 @@ export function getMockIncidentData(title: string) {
     explanation,
     summary,
     isClery,
-    needsMoreInfo
+    needsMoreInfo,
+    requiresTimelyWarning
   };
 }

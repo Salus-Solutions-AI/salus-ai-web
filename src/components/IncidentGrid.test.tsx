@@ -1,4 +1,3 @@
-
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitForElementToBeRemoved } from '../test/utils/test-utils';
 import IncidentGrid from './IncidentGrid';
@@ -96,7 +95,8 @@ describe('IncidentGrid', () => {
         full_name: incident.uploadedBy
       },
       is_clery: incident.isClery,
-      needs_more_info: incident.needsMoreInfo
+      needs_more_info: incident.needsMoreInfo,
+      requires_timely_warning: incident.requiresTimelyWarning
     }));
     
     (getIncidents as any).mockImplementation(() => 

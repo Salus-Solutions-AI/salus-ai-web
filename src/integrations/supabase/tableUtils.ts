@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 export const getProfile = (id) => {
@@ -87,6 +86,8 @@ export const updateIncident = (id, updates) => {
             convertedUpdates['is_clery'] = value;
         } else if (key === 'needsMoreInfo') {
             convertedUpdates['needs_more_info'] = value;
+        } else if (key === 'requiresTimelyWarning') {
+            convertedUpdates['requires_timely_warning'] = value;
         } else {
             convertedUpdates[key] = value;
         }

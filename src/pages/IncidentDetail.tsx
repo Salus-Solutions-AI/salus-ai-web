@@ -10,7 +10,8 @@ import {
   AlertTriangle,
   Mail,
   Clipboard,
-  ClipboardCheck
+  ClipboardCheck,
+  Shield
 } from 'lucide-react';
 import { toast } from '@/components/ui/use-toast';
 import { Navbar } from '@/components/Navbar';
@@ -81,6 +82,7 @@ const IncidentDetail = () => {
             uploadedBy: data.profiles.full_name,
             isClery: data.is_clery || false,
             needsMoreInfo: data.needs_more_info || false,
+            requiresTimelyWarning: data.requires_timely_warning || false,
           };
           
           setIncident(formattedIncident);
@@ -458,12 +460,15 @@ Campus Safety Team`;
           <Card className={cn(
             "lg:col-span-2",
             incident?.isClery ? "border-2 border-[#8B5CF6] bg-[#FEF7CD]/20" : "",
-            incident?.needsMoreInfo ? "border-l-4 border-amber-500 bg-[#FFEBEB]/40" : ""
+            incident?.needsMoreInfo ? "border-l-4 border-amber-500 bg-[#FFEBEB]/40" : "",
+            incident?.requiresTimelyWarning ? "border-l-4 border-red-500 bg-red-50/40" : ""
           )}>
             <CardHeader>
               <div className="flex items-center mb-2">
                 {incident?.needsMoreInfo ? (
                   <AlertTriangle className="h-5 w-5 mr-2 text-amber-500" />
+                ) : incident?.requiresTimelyWarning ? (
+                  <AlertTriangle className="h-5 w-5 mr-2 text-red-500" />
                 ) : (
                   <FileText className="h-5 w-5 mr-2 text-primary" />
                 )}
@@ -477,6 +482,14 @@ Campus Safety Team`;
             </CardHeader>
             
             <CardContent className="space-y-6">
+              {incident?.requiresTimelyWarning && (
+                <div className="bg-red-50 p-4 rounded-md border border-red-200 mb-4">
+                  <div className="flex items-center gap-2 text-red-800 font-medium mb-2">
+                    <AlertTriangle className="h-5 w-5" />
+                    <span>This incident requires a timely warning</span>
+                  </div>
+                </div>
+              )}
               {incident?.needsMoreInfo && (
                 <div className="bg-amber-50 p-4 rounded-md border border-amber-200 mb-4">
                   <div className="flex items-center gap-2 text-amber-800 font-medium mb-2">
@@ -550,6 +563,21 @@ Campus Safety Team`;
                   <span className="flex items-center">
                     Clery Act Incident
                     <Flag className="ml-1 h-4 w-4 text-[#8B5CF6]" />
+                  </span>
+                </Label>
+                
+                <Label htmlFor="requiresTimelyWarning" className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    id="requiresTimelyWarning"
+                    type="checkbox"
+                    checked={getBooleanValue('requiresTimelyWarning')}
+                    onChange={(e) => handleChange('requiresTimelyWarning', e.target.checked)}
+                    className="w-4 h-4 text-red-500 border-gray-300 rounded focus:ring-red-500"
+                    disabled={isCompleted}
+                  />
+                  <span className="flex items-center">
+                    Requires Timely Warning
+                    <Shield className="ml-1 h-4 w-4 text-red-500" />
                   </span>
                 </Label>
                 
@@ -627,6 +655,18 @@ Campus Safety Team`;
                     <Badge variant="outline" className="bg-[#8B5CF6]/10 text-[#8B5CF6] border-[#8B5CF6]/20">
                       <Flag className="mr-2 h-4 w-4" />
                       Clery Act Incident
+                    </Badge>
+                  </div>
+                </div>
+              )}
+
+              {incident?.requiresTimelyWarning && (
+                <div>
+                  <p className="text-sm font-medium">Timely Warning Required</p>
+                  <div className="flex items-center mt-1">
+                    <Badge variant="outline" className="bg-red-100 text-red-800 border-red-200">
+                      <Shield className="mr-2 h-4 w-4" />
+                      Timely Warning
                     </Badge>
                   </div>
                 </div>

@@ -73,6 +73,7 @@ const IncidentGrid = ({ refresh, refreshQueuedOnly, queuedIncidents, setQueuedIn
             uploadedBy: incident.profiles.full_name,
             isClery: incident.is_clery || false,
             needsMoreInfo: incident.needs_more_info || false,
+            requiresTimelyWarning: incident.requires_timely_warning || false,
           }));
           
           const queued = formattedIncidents.filter(
@@ -130,6 +131,7 @@ const IncidentGrid = ({ refresh, refreshQueuedOnly, queuedIncidents, setQueuedIn
             uploadedBy: incident.profiles.full_name,
             isClery: incident.is_clery || false,
             needsMoreInfo: incident.needs_more_info || false,
+            requiresTimelyWarning: incident.requires_timely_warning || false,
           }));
           
           const queued = formattedIncidents.filter(

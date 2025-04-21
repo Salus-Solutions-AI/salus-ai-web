@@ -40,6 +40,7 @@ export class UNHIncidentPopulator implements IncidentPopulator {
       explanation: mockData.explanation,
       is_clery: mockData.isClery,
       needs_more_info: mockData.needsMoreInfo,
+      requires_timely_warning: mockData.requiresTimelyWarning,
     };
   }
 }

@@ -14,6 +14,7 @@ export interface Incident {
   uploadedBy: string;
   isClery: boolean;
   needsMoreInfo?: boolean;
+  requiresTimelyWarning?: boolean;
 }
 
 export enum IncidentProcessingStatus {

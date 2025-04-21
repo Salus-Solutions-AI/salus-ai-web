@@ -40,6 +40,7 @@ export class LongBeachIncidentPopulator implements IncidentPopulator {
       explanation: mockData.explanation,
       is_clery: mockData.isClery,
       needs_more_info: mockData.needsMoreInfo,
+      requiresTimelyWarning: mockData.requiresTimelyWarning,
     };
   }
 }

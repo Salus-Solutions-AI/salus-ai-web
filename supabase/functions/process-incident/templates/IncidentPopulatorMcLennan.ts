@@ -88,6 +88,7 @@ export class McLennanIncidentPopulator implements IncidentPopulator {
       explanation: classificationResponse.explanation,
       is_clery: classificationResponse.isClery,
       needs_more_info: classificationResponse.category.includes("Needs more info"),
+      requires_timely_warning: classificationResponse.category.includes("Requires timely warning"),
     };
   }
 }
