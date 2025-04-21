@@ -1,5 +1,3 @@
-import { ClassificationResult, parseClassificationResponse } from "./promptUtils";
-
 export async function queryAnthropic(apiKey: string, prompt: string): Promise<string> {
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
