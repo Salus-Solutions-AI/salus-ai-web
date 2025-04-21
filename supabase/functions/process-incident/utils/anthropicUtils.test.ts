@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { queryAnthropic } from './anthropicUtils.ts';
+import { constructClassificationPrompt, parseClassificationResponse } from './promptUtils.ts';
 
 // Mock fetch
 global.fetch = vi.fn();
@@ -44,7 +45,9 @@ describe('Classification Utilities', () => {
     (global.fetch as any).mockResolvedValue(mockResponse);
 
     // Call the function
-    const result = await queryAnthropic(apiKey, documentText, categories, "");
+    const prompt = constructClassificationPrompt(documentText, categories, "");
+    const llmResult = await queryAnthropic(apiKey, prompt);
+    const result = parseClassificationResponse(llmResult);
 
     // Verify fetch was called with correct params
     expect(global.fetch).toHaveBeenCalledWith('https://api.anthropic.com/v1/messages', {
@@ -90,7 +93,8 @@ describe('Classification Utilities', () => {
     (global.fetch as any).mockResolvedValue(errorResponse);
 
     // Verify the function throws an error
-    await expect(queryAnthropic(apiKey, documentText, categories, "")).rejects.toThrow('Anthropic API error: 401 Invalid API key');
+    const prompt = constructClassificationPrompt(documentText, categories, "");
+    await expect(queryAnthropic(apiKey, prompt)).rejects.toThrow('Anthropic API error: 401 Invalid API key');
   });
 
   it('should handle partial or malformed responses', async () => {
@@ -113,8 +117,9 @@ describe('Classification Utilities', () => {
 
     (global.fetch as any).mockResolvedValue(mockResponse);
     
-    const result = await queryAnthropic(apiKey, documentText, categories, "");
-    
+    const prompt = constructClassificationPrompt(documentText, categories, "");
+    const llmResult = await queryAnthropic(apiKey, prompt);
+    const result = parseClassificationResponse(llmResult);
     // It should set defaults for missing fields
     expect(result).toEqual({
       category: 'Theft',
@@ -150,7 +155,9 @@ describe('Classification Utilities', () => {
 
     (global.fetch as any).mockResolvedValue(mockResponse);
     
-    const result = await queryAnthropic(apiKey, documentText, categories, "");
+    const prompt = constructClassificationPrompt(documentText, categories, "");
+    const llmResult = await queryAnthropic(apiKey, prompt);
+    const result = parseClassificationResponse(llmResult);
     
     expect(result.isClery).toBe(false);
     expect(result.category).toBe('Vandalism');
@@ -178,7 +185,9 @@ describe('Classification Utilities', () => {
 
     (global.fetch as any).mockResolvedValue(mockResponse);
     
-    const result = await queryAnthropic(apiKey, documentText, categories, "");
+    const prompt = constructClassificationPrompt(documentText, categories, "");
+    const llmResult = await queryAnthropic(apiKey, prompt);
+    const result = parseClassificationResponse(llmResult);
     
     expect(result.category).toBe('Needs more info');
   });
@@ -187,7 +196,8 @@ describe('Classification Utilities', () => {
     // Mock a network error
     (global.fetch as any).mockRejectedValue(new Error('Network error'));
     
-    await expect(queryAnthropic(apiKey, documentText, categories, "")).rejects.toThrow('Network error');
+    const prompt = constructClassificationPrompt(documentText, categories, "");
+    await expect(queryAnthropic(apiKey, prompt)).rejects.toThrow('Network error');
   });
 
   it('should parse completely unexpected responses', async () => {
@@ -206,7 +216,9 @@ describe('Classification Utilities', () => {
 
     (global.fetch as any).mockResolvedValue(mockResponse);
     
-    const result = await queryAnthropic(apiKey, documentText, categories, "");
+    const prompt = constructClassificationPrompt(documentText, categories, "");
+    const llmResult = await queryAnthropic(apiKey, prompt);
+    const result = parseClassificationResponse(llmResult);
     
     // It should use default values
     expect(result).toEqual({

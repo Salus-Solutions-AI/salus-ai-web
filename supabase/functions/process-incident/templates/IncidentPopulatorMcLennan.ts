@@ -4,6 +4,7 @@ import { pollAnalyzeDocumentJob, S3Object, startAnalyzeDocumentJob, TextractConf
 import { queryAnthropic } from "../utils/anthropicUtils.ts";
 import { queryOpenAI } from "../utils/openAiUtils.ts";
 import { parseDate } from "../utils/dateUtils.ts";
+import { constructClassificationPrompt, constructTimelyWarningPrompt, parseClassificationResponse, parseTimelyWarningResponse } from "../utils/promptUtils.ts";
 
 /**
  * McLennan Community College implementation of IncidentPopulator
@@ -56,25 +57,30 @@ export class McLennanIncidentPopulator implements IncidentPopulator {
       description: "Use this category if the incident does not fit into any of the other categories."
     });
 
-    const classificationResponse = this.aiService === 'openai'
-      ? await queryOpenAI(
-          this.aiApiKey,
-          textractFormData["Description of crime or incident:"],
-          categories.map(element => ({
-            name: element.name,
-            description: element.description,
-          })),
-          "",
-        )
-      : await queryAnthropic(
-          this.aiApiKey,
-          textractFormData["Description of crime or incident:"],
-          categories.map(element => ({
-            name: element.name,
-            description: element.description,
-          })),
-          "",
-        );
+    const classificationPrompt = constructClassificationPrompt(
+      textractFormData["Description of crime or incident:"],
+      categories.map(element => ({
+        name: element.name,
+        description: element.description,
+      })),
+      "",
+    )
+
+    const classificationLLMResponse = this.aiService === 'openai'
+      ? await queryOpenAI(this.aiApiKey, classificationPrompt)
+      : await queryAnthropic(this.aiApiKey, classificationPrompt);
+
+    const classificationResponse = parseClassificationResponse(classificationLLMResponse);
+
+    const timelyWarningPrompt = constructTimelyWarningPrompt(
+      textractFormData["Description of crime or incident:"],
+    )
+
+    const timelyWarningLLMResponse = this.aiService === 'openai'
+      ? await queryOpenAI(this.aiApiKey, timelyWarningPrompt)
+      : await queryAnthropic(this.aiApiKey, timelyWarningPrompt);
+
+    const timelyWarningResponse = parseTimelyWarningResponse(timelyWarningLLMResponse);
 
     return {
       ...incident,
@@ -88,7 +94,7 @@ export class McLennanIncidentPopulator implements IncidentPopulator {
       explanation: classificationResponse.explanation,
       is_clery: classificationResponse.isClery,
       needs_more_info: classificationResponse.category.includes("Needs more info"),
-      requires_timely_warning: classificationResponse.category.includes("Requires timely warning"),
+      requires_timely_warning: timelyWarningResponse,
     };
   }
 }

@@ -1,8 +1,4 @@
-import { Category, ClassificationResult, constructClassificationPrompt, parseClassificationResponse } from './promptUtils';
-
-export async function queryOpenAI(apiKey: string, documentText: string, categories: Category[], additionalData: string): Promise<ClassificationResult> {
-    const prompt = constructClassificationPrompt(documentText, categories, additionalData);
-    
+export async function queryOpenAI(apiKey: string, prompt: string): Promise<string> {
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -24,5 +20,5 @@ export async function queryOpenAI(apiKey: string, documentText: string, categori
     }
 
     const data = await response.json();
-    return parseClassificationResponse(data.choices[0].message.content);
+    return data.choices[0].message.content;
 }

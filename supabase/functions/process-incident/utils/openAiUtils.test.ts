@@ -1,4 +1,4 @@
-
+import { constructClassificationPrompt, parseClassificationResponse } from './promptUtils.ts';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { queryOpenAI } from './openAiUtils.ts';
 
@@ -47,7 +47,9 @@ describe('OpenAI Classification Utilities', () => {
     (global.fetch as any).mockResolvedValue(mockResponse);
 
     // Call the function
-    const result = await queryOpenAI(apiKey, documentText, categories, "");
+    const prompt = constructClassificationPrompt(documentText, categories, "");
+    const llmResult = await queryOpenAI(apiKey, prompt);
+    const result = parseClassificationResponse(llmResult);
 
     // Verify fetch was called with correct params
     expect(global.fetch).toHaveBeenCalledWith('https://api.openai.com/v1/chat/completions', {
@@ -92,7 +94,8 @@ describe('OpenAI Classification Utilities', () => {
     (global.fetch as any).mockResolvedValue(errorResponse);
 
     // Verify the function throws an error
-    await expect(queryOpenAI(apiKey, documentText, categories, "")).rejects.toThrow('OpenAI API error: 401 Invalid API key');
+    const prompt = constructClassificationPrompt(documentText, categories, "");
+    await expect(queryOpenAI(apiKey, prompt)).rejects.toThrow('OpenAI API error: 401 Invalid API key');
   });
 
   it('should handle partial or malformed responses', async () => {
@@ -117,7 +120,9 @@ describe('OpenAI Classification Utilities', () => {
 
     (global.fetch as any).mockResolvedValue(mockResponse);
     
-    const result = await queryOpenAI(apiKey, documentText, categories, "");
+    const prompt = constructClassificationPrompt(documentText, categories, "");
+    const llmResult = await queryOpenAI(apiKey, prompt); 
+    const result = parseClassificationResponse(llmResult);
     
     // It should set defaults for missing fields
     expect(result).toEqual({
@@ -156,7 +161,9 @@ describe('OpenAI Classification Utilities', () => {
 
     (global.fetch as any).mockResolvedValue(mockResponse);
     
-    const result = await queryOpenAI(apiKey, documentText, categories, "");
+    const prompt = constructClassificationPrompt(documentText, categories, "");
+    const llmResult = await queryOpenAI(apiKey, prompt);
+    const result = parseClassificationResponse(llmResult);
     
     expect(result.isClery).toBe(false);
     expect(result.category).toBe('Vandalism');

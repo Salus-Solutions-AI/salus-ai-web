@@ -4,6 +4,7 @@ import { getDocumentText, S3Object, TextractConfig } from "../utils/textractUtil
 import { queryAnthropic } from "../utils/anthropicUtils.ts";
 import { queryOpenAI } from "../utils/openAiUtils.ts";
 import { parseDate } from "../utils/dateUtils.ts";
+import { constructClassificationPrompt, parseClassificationResponse, constructTimelyWarningPrompt, parseTimelyWarningResponse } from "../utils/promptUtils.ts";
 
 /**
  * Default implementation of IncidentPopulator
@@ -44,26 +45,33 @@ export class DefaultIncidentPopulator implements IncidentPopulator {
       name: "None of the above",
       description: "Use this category if the incident does not fit into any of the other categories."
     });
+    const prompt = constructClassificationPrompt(
+      textractDocument,
+      categories.map(element => ({
+        name: element.name,
+        description: element.description,
+      })),
+      constructAdditionalPromptData());
 
-    const classificationResponse = this.aiService === 'openai'
+    const classificationLLMResponse = this.aiService === 'openai'
       ? await queryOpenAI(
           this.aiApiKey,
-          textractDocument, 
-          categories.map(element => ({
-            name: element.name,
-            description: element.description,
-          })),
-          constructAdditionalPromptData(),
+          prompt,
         )
       : await queryAnthropic(
           this.aiApiKey,
-          textractDocument,
-          categories.map(element => ({
-            name: element.name,
-            description: element.description,
-          })),
-          constructAdditionalPromptData(),
+          prompt,
         );
+      
+    const classificationResponse = parseClassificationResponse(classificationLLMResponse);
+
+    const timelyWarningPrompt = constructTimelyWarningPrompt(textractDocument)
+
+    const timelyWarningLLMResponse = this.aiService === 'openai'
+      ? await queryOpenAI(this.aiApiKey, timelyWarningPrompt)
+      : await queryAnthropic(this.aiApiKey, timelyWarningPrompt);
+
+    const timelyWarningResponse = parseTimelyWarningResponse(timelyWarningLLMResponse);
 
     return {
       ...incident,
@@ -77,7 +85,7 @@ export class DefaultIncidentPopulator implements IncidentPopulator {
       explanation: classificationResponse.explanation,
       is_clery: classificationResponse.isClery,
       needs_more_info: classificationResponse.category.includes("Needs more info"),
-      requires_timely_warning: classificationResponse.category.includes("Requires timely warning"),
+      requires_timely_warning: timelyWarningResponse,
     };
   }
 }

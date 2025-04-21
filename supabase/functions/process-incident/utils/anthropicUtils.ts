@@ -1,8 +1,6 @@
-import { Category, ClassificationResult, constructClassificationPrompt, parseClassificationResponse } from "./promptUtils";
+import { ClassificationResult, parseClassificationResponse } from "./promptUtils";
 
-export async function queryAnthropic(apiKey: string, documentText: string, categories: Category[], additionalData: string): Promise<ClassificationResult> {
-    const prompt = constructClassificationPrompt(documentText, categories, additionalData);
-    
+export async function queryAnthropic(apiKey: string, prompt: string): Promise<string> {
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
@@ -26,5 +24,5 @@ export async function queryAnthropic(apiKey: string, documentText: string, categ
     }
 
     const data = await response.json();
-    return parseClassificationResponse(data.content[0].text);
+    return data.content[0].text;
 }

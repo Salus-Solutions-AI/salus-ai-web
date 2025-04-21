@@ -67,3 +67,23 @@ export function parseClassificationResponse(responseText: string): Classificatio
         summary: summaryMatch ? summaryMatch[1].trim() : "No summary provided.",
     };
 }
+
+export function constructTimelyWarningPrompt(incidentText: string): string {
+    return `
+        Task: Determine if the incident should be classified as requiring atimely warning.
+        An incident should be classified as requiring a timely warning all of the following conditions are met:
+            - It is a Clery crime
+            - It occured within Clery geography
+            - There is a serious and ongoing community threat
+        
+        Incident text:
+        ${incidentText}
+
+        Classification decision: [true/false]
+    `;
+}
+
+export function parseTimelyWarningResponse(responseText: string): boolean {
+    const match = responseText.match(/Classification decision: (.+?)$/mi);
+    return match ? match[1].trim().toLowerCase() === "true" : false;
+}
