@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Session, User } from '@supabase/supabase-js';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { toast } from '@/components/ui/use-toast';
+import { profilesApi } from '@/api/resources/profiles';
 
 type AuthContextType = {
   session: Session | null;
@@ -27,15 +28,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const fetchProfile = async (userId: string) => {
     try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .single();
-
-      if (error) throw error;
-      console.log("Fetched profile:", data); // Debug log
-      setProfile(data);
+      const profile = await profilesApi.getById(session, userId);
+      console.log("Fetched profile:", profile); // Debug log
+      setProfile(profile);
     } catch (error) {
       console.error('Error fetching profile:', error);
     }
