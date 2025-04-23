@@ -1,4 +1,3 @@
-
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor, fireEvent } from '../test/utils/test-utils';
 import ContactForm from './ContactForm';
@@ -117,7 +116,7 @@ describe('ContactForm', () => {
     const fetchCall = mockFetch.mock.calls[0];
     const [urlOrRequest, options] = fetchCall;
     
-    expect(urlOrRequest.url).toBe('https://uhudxpdzeddkqebgeqjn.supabase.co/functions/v1/send-contact-email');
+    expect(urlOrRequest.url).toBe('http://127.0.0.1:54321/functions/v1/send-contact-email');
     const requestBody = await urlOrRequest.clone().json();
     expect(requestBody).toEqual({
       firstName: 'Alex',

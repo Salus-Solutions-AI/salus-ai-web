@@ -1,3 +1,10 @@
+export interface Profile {
+  id: string;
+  fullName: string;
+  organization: string;
+  createdCategories: boolean;
+}
+
 export interface Incident {
   id: string;
   title: string;
