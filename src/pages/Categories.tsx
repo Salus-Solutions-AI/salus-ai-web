@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Navbar } from '@/components/Navbar';
 import { supabase } from '@/integrations/supabase/client';
@@ -28,10 +27,12 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Category } from '@/types';
-import { getCategories, getDefaultCategories, getProfile, insertCategories, setCreatedCategories } from '@/integrations/supabase/tableUtils';
+import { getProfile, insertCategories, setCreatedCategories } from '@/integrations/supabase/tableUtils';
+import { categoriesApi } from '@/api/resources/categories';
+import { defaultCategoriesApi } from '@/api/resources/default_categories';
 
 const Categories = () => {
-  const { user } = useAuth();
+  const { session, user } = useAuth();
   const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -51,11 +52,9 @@ const Categories = () => {
 
       if (!profileData.created_categories) {
         // copy default categories to user's profile
-        var { data: defaultCategoriesData, error: defaultCategoriesError } = await getDefaultCategories();
-        if (defaultCategoriesError) throw defaultCategoriesError;
+        var defaultCategories = await defaultCategoriesApi.getAll(session);
 
-        var categories = defaultCategoriesData.map((defaultCategory) => {
-          // Fix: Remove property that doesn't exist and map to the correct property name
+        var categories = defaultCategories.map((defaultCategory) => {
           return {
             name: defaultCategory.name,
             description: defaultCategory.description,
@@ -71,19 +70,8 @@ const Categories = () => {
         if (updateError) throw updateError;
       }
 
-      var { data: categoriesData, error: categoriesError } = await getCategories();
-      if (categoriesError) throw categoriesError;
-      
-      // Map database format (snake_case) to TypeScript interface format (camelCase)
-      const formattedCategories: Category[] = categoriesData.map(cat => ({
-        id: cat.id,
-        name: cat.name,
-        description: cat.description || '',
-        createdAt: cat.created_at,
-        createdBy: cat.created_by || ''
-      }));
-      
-      setCategories(formattedCategories);
+      const categoriesData = await categoriesApi.getAll(session);
+      setCategories(categoriesData);
     } catch (error) {
       console.error('Error fetching categories:', error);
       toast({

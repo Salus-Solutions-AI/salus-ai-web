@@ -117,7 +117,7 @@ describe('ContactForm', () => {
     const fetchCall = mockFetch.mock.calls[0];
     const [urlOrRequest, options] = fetchCall;
     
-    expect(urlOrRequest.url).toBe('https://uhudxpdzeddkqebgeqjn.supabase.co/functions/v1/send-contact-email');
+    expect(urlOrRequest.url).toBe('http://localhost:54321/functions/v1/send-contact-email');
     const requestBody = await urlOrRequest.clone().json();
     expect(requestBody).toEqual({
       firstName: 'Alex',
