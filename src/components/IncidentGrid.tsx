@@ -19,8 +19,8 @@ import { toast } from '@/components/ui/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { getAttributeIcon, getStatusColor, getStatusIcon } from '@/utils/statusUtils';
 import { formatDate } from '@/utils/dateUtils';
-import { deleteIncident, getIncidents } from '@/integrations/supabase/tableUtils';
 import { downloadIncident } from '@/integrations/supabase/storageUtils';
+import { incidentsApi } from '@/api/resources/incidents';
 
 interface IncidentGridProps {
   refresh?: boolean;
@@ -37,55 +37,23 @@ const IncidentGrid = ({ refresh, refreshQueuedOnly, queuedIncidents, setQueuedIn
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState<'card' | 'list'>('card');
   const [showCleryOnly, setShowCleryOnly] = useState(false);
-  const { user } = useAuth();
+  const { session, user } = useAuth();
 
   const fetchAllIncidents = async () => {
     setIsLoading(true);
     
     try {
       if (user) {
-        let query = getIncidents(user.id);
+        const fetchedIncidents = await incidentsApi.getAll(session);
+        const queued = fetchedIncidents.filter(
+          incident => incident.status !== IncidentProcessingStatus.PENDING && incident.status !== IncidentProcessingStatus.COMPLETED
+        );
+        const nonQueued = fetchedIncidents.filter(
+          incident => incident.status === IncidentProcessingStatus.PENDING || incident.status === IncidentProcessingStatus.COMPLETED
+        );
         
-        const { data, error } = await query;
-        
-        if (error) {
-          toast({
-            title: "Error fetching incidents",
-            description: error.message,
-            variant: "destructive",
-          });
-          setIncidents([]);
-          setQueuedIncidents([]);
-        } else {
-          const formattedIncidents: Incident[] = data.map(incident => ({
-            id: incident.id,
-            title: incident.title,
-            date: incident.date,
-            category: incident.category,
-            status: incident.status as IncidentProcessingStatus,
-            number: incident.number,
-            location: incident.location,
-            explanation: incident.explanation,
-            summary: incident.summary,
-            pdfUrl: incident.pdf_url || '',
-            filePath: incident.file_path || '',
-            uploadedAt: incident.uploaded_at,
-            uploadedBy: incident.profiles.full_name,
-            isClery: incident.is_clery || false,
-            needsMoreInfo: incident.needs_more_info || false,
-            requiresTimelyWarning: incident.requires_timely_warning || false,
-          }));
-          
-          const queued = formattedIncidents.filter(
-            incident => incident.status !== IncidentProcessingStatus.PENDING && incident.status !== IncidentProcessingStatus.COMPLETED
-          );
-          const nonQueued = formattedIncidents.filter(
-            incident => incident.status === IncidentProcessingStatus.PENDING || incident.status === IncidentProcessingStatus.COMPLETED
-          );
-          
-          setQueuedIncidents(queued);
-          setIncidents(nonQueued);
-        }
+        setQueuedIncidents(queued);
+        setIncidents(nonQueued);
       }
     } catch (error) {
       console.error('Error fetching incidents:', error);
@@ -104,55 +72,30 @@ const IncidentGrid = ({ refresh, refreshQueuedOnly, queuedIncidents, setQueuedIn
   const fetchQueuedIncidentsOnly = async () => {
     try {
       if (user) {
-        let query = getIncidents(user.id);
+        const fetchedIncidents = await incidentsApi.getAll(session);
+        const queued = fetchedIncidents.filter(
+          incident => incident.status !== IncidentProcessingStatus.PENDING && incident.status !== IncidentProcessingStatus.COMPLETED
+        );
         
-        const { data, error } = await query;
+        setQueuedIncidents(queued);
         
-        if (error) {
-          toast({
-            title: "Error refreshing queue",
-            description: error.message,
-            variant: "destructive",
-          });
-        } else {
-          const formattedIncidents: Incident[] = data.map(incident => ({
-            id: incident.id,
-            title: incident.title,
-            date: incident.date,
-            category: incident.category,
-            status: incident.status as IncidentProcessingStatus,
-            number: incident.number,
-            location: incident.location,
-            explanation: incident.explanation,
-            summary: incident.summary,
-            pdfUrl: incident.pdf_url || '',
-            filePath: incident.file_path || '',
-            uploadedAt: incident.uploaded_at,
-            uploadedBy: incident.profiles.full_name,
-            isClery: incident.is_clery || false,
-            needsMoreInfo: incident.needs_more_info || false,
-            requiresTimelyWarning: incident.requires_timely_warning || false,
-          }));
-          
-          const queued = formattedIncidents.filter(
-            incident => incident.status !== IncidentProcessingStatus.PENDING && incident.status !== IncidentProcessingStatus.COMPLETED
-          );
-          
-          setQueuedIncidents(queued);
-          
-          const hasNewlyCompleted = queuedIncidents.some(oldQueuedIncident => 
-            !queued.some(newQueuedIncident => 
-              newQueuedIncident.id === oldQueuedIncident.id
-            )
-          );
-          
-          if (hasNewlyCompleted) {
-            fetchAllIncidents();
-          }
+        const hasNewlyCompleted = queuedIncidents.some(oldQueuedIncident => 
+          !queued.some(newQueuedIncident => 
+            newQueuedIncident.id === oldQueuedIncident.id
+          )
+        );
+        
+        if (hasNewlyCompleted) {
+          fetchAllIncidents();
         }
       }
     } catch (error) {
       console.error('Error refreshing queued incidents:', error);
+      toast({
+        title: "Error refreshing queued incidents",
+        description: error.message,
+        variant: "destructive",
+      });
     }
   };
 
@@ -208,22 +151,14 @@ const IncidentGrid = ({ refresh, refreshQueuedOnly, queuedIncidents, setQueuedIn
 
   const handleDeleteIncident = async (id: string) => {
     try {
-      const { error } = await deleteIncident(id)
-      
-      if (error) {
-        toast({
-          title: "Error",
-          description: "Failed to delete incident. " + error.message,
-          variant: "destructive",
-        });
-      } else {
-        setIncidents(incidents.filter(incident => incident.id !== id));
-        toast({
-          title: "Incident deleted",
-          description: "The incident has been successfully deleted.",
-          variant: "success",
-        });
-      }
+      await incidentsApi.delete(session, id);
+
+      setIncidents(incidents.filter(incident => incident.id !== id));
+      toast({
+        title: "Incident deleted",
+        description: "The incident has been successfully deleted.",
+        variant: "success",
+      });
     } catch (error) {
       toast({
         title: "Error",

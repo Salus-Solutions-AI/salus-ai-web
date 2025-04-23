@@ -27,9 +27,10 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Category } from '@/types';
-import { getProfile, insertCategories, setCreatedCategories } from '@/integrations/supabase/tableUtils';
+import { insertCategories, setCreatedCategories } from '@/integrations/supabase/tableUtils';
 import { categoriesApi } from '@/api/resources/categories';
 import { defaultCategoriesApi } from '@/api/resources/default_categories';
+import { profilesApi } from '@/api/resources/profiles';
 
 const Categories = () => {
   const { session, user } = useAuth();
@@ -47,10 +48,9 @@ const Categories = () => {
     try {
       setIsLoading(true);
 
-      const { data: profileData, error: profileError } = await getProfile(user.id);
-      if (profileError) throw profileError;
+      const profile = await profilesApi.getById(session, user.id);
 
-      if (!profileData.created_categories) {
+      if (!profile.createdCategories) {
         // copy default categories to user's profile
         var defaultCategories = await defaultCategoriesApi.getAll(session);
 

@@ -20,4 +20,9 @@ export const incidentsApi = {
       method: 'PUT',
       body: JSON.stringify(data),
     }),
+  
+  delete: (session: Session, id: string) => 
+    apiRequest<Incident>(`/api/incidents/${id}`, session, {
+      method: 'DELETE',
+    }),
 }; 

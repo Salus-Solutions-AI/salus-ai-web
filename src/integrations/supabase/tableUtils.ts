@@ -1,13 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
 
-export const getProfile = (id) => {
-    return supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', id)
-    .single();
-}
-
 export const getUserOrganization = (userId) => {
     return supabase
     .from('profiles')
@@ -29,20 +21,6 @@ export const updateUserProfile = (id, updates) => {
     .from('profiles')
     .update(updates)
     .eq('id', id);
-}
-
-export const getCategories = () => {
-    return supabase
-    .from('categories')
-    .select('*')
-    .order('name');
-}
-
-export const getDefaultCategories = () => {
-    return supabase
-    .from('default_categories')
-    .select('*')
-    .order('name');
 }
 
 export const insertCategories = (categories) => {
