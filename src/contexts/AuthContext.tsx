@@ -27,9 +27,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const location = useLocation();
 
   const fetchProfile = async (userId: string) => {
+    if (!session) return;
     try {
       const profile = await profilesApi.getById(session, userId);
-      console.log("Fetched profile:", profile); // Debug log
       setProfile(profile);
     } catch (error) {
       console.error('Error fetching profile:', error);
