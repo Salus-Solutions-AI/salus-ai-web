@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { Navbar } from '@/components/Navbar';
-import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/components/ui/use-toast';
 import { Plus, Pencil, Trash2 } from 'lucide-react';
@@ -27,7 +26,6 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Category } from '@/types';
-import { insertCategories, setCreatedCategories } from '@/integrations/supabase/tableUtils';
 import { categoriesApi } from '@/api/resources/categories';
 import { defaultCategoriesApi } from '@/api/resources/default_categories';
 import { profilesApi } from '@/api/resources/profiles';
@@ -63,11 +61,11 @@ const Categories = () => {
           };
         });
 
-        var { error: insertError } = await insertCategories(categories);
-        if (insertError) throw insertError;
+        for (const category of categories) {
+          await categoriesApi.create(session, category);
+        }
 
-        var { error: updateError } = await setCreatedCategories(user.id);
-        if (updateError) throw updateError;
+        await profilesApi.update(session, user.id, { createdCategories: true });
       }
 
       const categoriesData = await categoriesApi.getAll(session);
@@ -130,32 +128,23 @@ const Categories = () => {
 
     try {
       if (selectedCategory) {
-        // Update existing category
-        const { error } = await supabase
-          .from('categories')
-          .update({
-            name: formData.name,
-            description: formData.description,
-          })
-          .eq('id', selectedCategory.id);
+        await categoriesApi.update(session, selectedCategory.id, {
+          name: formData.name,
+          description: formData.description,
+        });
 
-        if (error) throw error;
         toast({
           title: 'Category updated',
           description: 'The category has been updated successfully',
           variant: 'success',
         });
       } else {
-        // Create new category
-        const { error } = await supabase
-          .from('categories')
-          .insert({
+        await categoriesApi.create(session, {
             name: formData.name,
             description: formData.description,
-            created_by: user.id,
+            createdBy: user.id,
           });
 
-        if (error) throw error;
         toast({
           title: 'Category created',
           description: 'The category has been created successfully',
@@ -179,12 +168,7 @@ const Categories = () => {
     if (!selectedCategory) return;
 
     try {
-      const { error } = await supabase
-        .from('categories')
-        .delete()
-        .eq('id', selectedCategory.id);
-
-      if (error) throw error;
+      await categoriesApi.delete(session, selectedCategory.id);
       
       toast({
         title: 'Category deleted',
