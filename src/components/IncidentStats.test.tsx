@@ -1,13 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '../test/utils/test-utils';
 import IncidentStats from './IncidentStats';
-import { getIncidents } from '@/integrations/supabase/tableUtils';
 import { Incident, IncidentProcessingStatus } from '@/types';
-import exp from 'constants';
+import { incidentsApi } from '@/api/resources/incidents';
 
 // Mock the module
-vi.mock('@/integrations/supabase/tableUtils', () => ({
-  getIncidents: vi.fn()
+vi.mock('@/api/resources/incidents', () => ({
+  incidentsApi: {
+    getAll: vi.fn()
+  }
 }));
 
 // Mock the AuthContext module
@@ -91,7 +92,7 @@ describe('IncidentStats', () => {
     });
     
     // Mock the API to return the unresolved promise
-    (getIncidents as any).mockReturnValue(promise);
+    vi.mocked(incidentsApi.getAll).mockReturnValue(promise as unknown as Promise<Incident[]>);
     
     render(<IncidentStats />);
     
@@ -101,33 +102,7 @@ describe('IncidentStats', () => {
   });
 
   it('displays incident statistics when data is loaded', async () => {
-    // Properly structure the mock response for the Supabase API format
-    const mockIncidentsForApi = mockIncidents.map(incident => ({
-      id: incident.id,
-      title: incident.title,
-      date: incident.date,
-      category: incident.category,
-      location: incident.location,
-      explanation: incident.explanation,
-      summary: incident.summary,
-      status: incident.status,
-      number: incident.number,
-      pdf_url: incident.pdfUrl,
-      file_path: incident.filePath,
-      uploaded_at: incident.uploadedAt,
-      profiles: {
-        full_name: incident.uploadedBy
-      },
-      is_clery: incident.isClery,
-      needs_more_info: incident.needsMoreInfo,
-      requires_timely_warning: incident.requiresTimelyWarning
-    }));
-    
-    (getIncidents as any).mockResolvedValue({ 
-      data: mockIncidentsForApi, 
-      error: null 
-    });
-    
+    vi.mocked(incidentsApi.getAll).mockResolvedValue(mockIncidents)
     render(<IncidentStats />);
     
     // Wait for the statistics to load and verify they display correctly
@@ -149,11 +124,8 @@ describe('IncidentStats', () => {
 
   it('displays error state when fetch fails', async () => {
     // Mock a failed API response
-    (getIncidents as any).mockResolvedValue({ 
-      data: null, 
-      error: { message: 'Failed to fetch incidents' } 
-    });
-    
+    vi.mocked(incidentsApi.getAll).mockRejectedValue(new Error('Failed to fetch incidents'));
+
     render(<IncidentStats />);
     
     // Wait for error message to be displayed
@@ -164,10 +136,7 @@ describe('IncidentStats', () => {
 
   it('displays empty state when no incidents', async () => {
     // Mock an empty successful response
-    (getIncidents as any).mockResolvedValue({ 
-      data: [], 
-      error: null 
-    });
+    vi.mocked(incidentsApi.getAll).mockResolvedValue([]);
     
     render(<IncidentStats />);
     

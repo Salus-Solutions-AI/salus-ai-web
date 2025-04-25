@@ -25,7 +25,6 @@ import { Incident, IncidentProcessingStatus } from '@/types';
 import { formatDate } from '@/utils/dateUtils';
 import { getStatusColor, getStatusIcon } from '@/utils/statusUtils';
 import { downloadIncident } from '@/integrations/supabase/storageUtils';
-import { getIncidentById, updateIncident } from '@/integrations/supabase/tableUtils';
 import { cn } from "@/lib/utils";
 import {
   Dialog,
@@ -33,16 +32,13 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
 } from "@/components/ui/dialog";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { incidentsApi } from '@/api/resources/incidents';
+import { useAuth } from '@/contexts/AuthContext';
 
 const IncidentDetail = () => {
   const { id } = useParams<{ id: string }>();
+  const { session } = useAuth();
   const navigate = useNavigate();
   
   const [incident, setIncident] = useState<Incident | null>(null);
@@ -62,31 +58,8 @@ const IncidentDetail = () => {
       if (!id) return;
       
       try {
-        const { data, error } = await getIncidentById(id);
-        if (error) throw error;
-        
-        if (data) {
-          const formattedIncident: Incident = {
-            id: data.id,
-            title: data.title,
-            date: data.date,
-            category: data.category,
-            location: data.location,
-            explanation: data.explanation,
-            summary: data.summary,
-            status: data.status as IncidentProcessingStatus,
-            number: data.number,
-            pdfUrl: data.pdf_url, 
-            filePath: data.file_path,
-            uploadedAt: data.uploaded_at,
-            uploadedBy: data.profiles.full_name,
-            isClery: data.is_clery || false,
-            needsMoreInfo: data.needs_more_info || false,
-            requiresTimelyWarning: data.requires_timely_warning || false,
-          };
-          
-          setIncident(formattedIncident);
-        }
+        const incident = await incidentsApi.getById(session, id);
+        setIncident(incident);
       } catch (error) {
         console.error('Error fetching incident:', error);
         toast({
@@ -132,9 +105,7 @@ const IncidentDetail = () => {
     setSaving(true);
     
     try {
-      const { error } = await updateIncident(incident.id, editedFields);
-      if (error) throw error;
-      
+      await incidentsApi.update(session, incident.id, editedFields);
       setIncident(prev => prev ? { ...prev, ...editedFields } : null);
       setEditedFields({});
       
@@ -170,9 +141,7 @@ const IncidentDetail = () => {
     setCompletingReview(true);
     
     try {
-      const { error } = await updateIncident(incident.id, { status: IncidentProcessingStatus.COMPLETED });
-      if (error) throw error;
-      
+      await incidentsApi.update(session, incident.id, { status: IncidentProcessingStatus.COMPLETED });
       setIncident(prev => 
         prev ? { ...prev, status: IncidentProcessingStatus.COMPLETED } : null
       );

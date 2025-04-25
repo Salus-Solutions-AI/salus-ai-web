@@ -5,7 +5,6 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Eye, EyeOff, Save, UserCircle, Mail, Building, KeyRound } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import { updateUserProfile } from '@/integrations/supabase/tableUtils';
 import { supabase } from '@/integrations/supabase/client';
 import {
   Form,
@@ -20,6 +19,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import Navbar from '@/components/Navbar';
+import { profilesApi } from '@/api/resources/profiles';
 
 const profileSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -37,7 +37,7 @@ const passwordSchema = z.object({
 });
 
 const Account = () => {
-  const { user, profile } = useAuth();
+  const { session, profile, user } = useAuth();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [passwordLoading, setPasswordLoading] = useState(false);
@@ -94,14 +94,11 @@ const Account = () => {
         });
       }
       
-      const { error: profileError } = await updateUserProfile(user.id, {
-        full_name: data.name,
+      await profilesApi.update(session, user.id, {
+        fullName: data.name,
         organization: data.organization,
-        updated_at: new Date(),
       });
-      
-      if (profileError) throw profileError;
-      
+
       toast({
         title: "Profile updated",
         description: "Your profile information has been updated successfully.",
