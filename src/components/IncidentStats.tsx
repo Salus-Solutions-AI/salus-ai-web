@@ -2,8 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { getIncidents } from '@/integrations/supabase/tableUtils';
-import { Incident, IncidentProcessingStatus } from '@/types';
+import { Incident } from '@/types';
 import { 
   BarChart, 
   Bar, 
@@ -18,6 +17,7 @@ import {
   Legend
 } from 'recharts';
 import { toast } from '@/components/ui/use-toast';
+import { incidentsApi } from '@/api/resources/incidents';
 
 // Updated cohesive color scheme that matches the website's aesthetic
 const CLERY_COLORS = ['#8B5CF6', '#222222']; // Purple for Clery, Dark grey for non-Clery
@@ -64,7 +64,7 @@ const IncidentStats = () => {
   const [categoryData, setCategoryData] = useState<{ name: string; count: number }[]>([]);
   const [cleryData, setCleryData] = useState<{ name: string; value: number }[]>([]);
   const [categoryColors, setCategoryColors] = useState<string[]>([]);
-  const { user } = useAuth();
+  const { user, session } = useAuth();
 
   useEffect(() => {
     const fetchIncidents = async () => {
@@ -72,36 +72,10 @@ const IncidentStats = () => {
       
       try {
         if (user) {
-          const { data, error } = await getIncidents(user.id);
+          const incidents = await incidentsApi.getAll(session);
           
-          if (error) {
-            toast({
-              title: "Error fetching incidents",
-              description: error.message,
-              variant: "destructive",
-            });
-            setIncidents([]);
-          } else {
-            const formattedIncidents: Incident[] = data.map(incident => ({
-              id: incident.id,
-              title: incident.title,
-              date: incident.date,
-              category: incident.category,
-              status: incident.status as IncidentProcessingStatus,
-              number: incident.number,
-              location: incident.location,
-              explanation: incident.explanation,
-              summary: incident.summary,
-              pdfUrl: incident.pdf_url || '',
-              filePath: incident.file_path || '',
-              uploadedAt: incident.uploaded_at,
-              uploadedBy: incident.profiles.full_name,
-              isClery: incident.is_clery || false,
-            }));
-            
-            setIncidents(formattedIncidents);
-            processData(formattedIncidents);
-          }
+          setIncidents(incidents);
+          processData(incidents);
         }
       } catch (error) {
         console.error('Error fetching incidents:', error);
