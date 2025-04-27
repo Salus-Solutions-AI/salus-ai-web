@@ -1,7 +1,7 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'npm:@supabase/supabase-js'
 import { uploadToS3, type S3Config } from './utils/s3Utils.ts'
-import { startAnalyzeDocumentJob, pollAnalyzeDocumentJob, type TextractConfig } from './utils/textractUtils.ts'
+import { type TextractConfig } from './utils/textractUtils.ts'
 import { IncidentPopulatorFactory } from './templates/IncidentPopulatorFactory.ts'
 
 const corsHeaders = {
@@ -39,8 +39,8 @@ serve(async (req) => {
     }
     
     const supabaseAdmin = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+      Deno.env.get('VITE_SUPABASE_URL') ?? '',
+      Deno.env.get('VITE_SUPABASE_SERVICE_ROLE_KEY') ?? '',
       {
         auth: {
           autoRefreshToken: false,

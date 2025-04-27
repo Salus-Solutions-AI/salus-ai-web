@@ -1,8 +1,8 @@
-import { Session } from '@supabase/supabase-js';
 import { apiRequest } from '../client';
-import { DefaultCategory } from '@/types';
+import { Session } from '@supabase/supabase-js';
+import { Category } from '@/types';
 
 export const defaultCategoriesApi = {
-  getAll: (session: Session) => 
-    apiRequest<DefaultCategory[]>('/api/default_categories', session),
+  getAll: (session: Session): Promise<Category[]> => 
+    apiRequest('/api/default_categories', session),
 };

@@ -11,8 +11,8 @@ import {
 } from "https://esm.sh/@supabase/supabase-js@2.23.0";
 
 // Setup the Supabase client configuration
-const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
-const supabaseKey = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
+const supabaseUrl = Deno.env.get("VITE_SUPABASE_URL") ?? "";
+const supabaseKey = Deno.env.get("VITE_SUPABASE_ANON_KEY") ?? "";
 const options = {
   auth: {
     autoRefreshToken: false,
