@@ -47,7 +47,16 @@ export interface Category {
   id: string;
   name: string;
   description: string;
+  longDescription: string;
   createdAt: string;
+  createdBy: string;
+}
+
+export interface DefaultCategory {
+  id: string;
+  name: string;
+  description: string;
+  longDescription: string;
 }
 
 export interface Log {
