@@ -1,4 +1,3 @@
-
 import React, { ReactElement } from 'react';
 import { render, RenderOptions } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -8,7 +7,10 @@ import { AuthProvider } from '@/contexts/AuthContext';
 // Custom wrapper with providers
 const AllTheProviders = ({ children }: { children: React.ReactNode }) => {
   return (
-    <BrowserRouter>
+    <BrowserRouter future={{ 
+      v7_startTransition: true,
+      v7_relativeSplatPath: true 
+    }}>
       <AuthProvider>
         {children}
       </AuthProvider>

@@ -1,6 +1,5 @@
-
 import '@testing-library/jest-dom';
-import { afterEach, beforeAll, afterAll, vi } from 'vitest';
+import { afterEach, beforeAll, afterAll, vi, beforeEach } from 'vitest';
 import { cleanup } from '@testing-library/react';
 import { setupServer } from 'msw/node';
 import { handlers } from './mocks/handlers';
@@ -29,3 +28,11 @@ afterEach(() => {
 
 // Clean up after tests are done
 afterAll(() => server.close());
+
+const originalConsoleError = console.error;
+beforeEach(() => {
+  console.error = vi.fn();
+});
+afterEach(() => {
+  console.error = originalConsoleError;
+});
