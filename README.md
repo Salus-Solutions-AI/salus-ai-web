@@ -1,96 +1,96 @@
+# Salus AI - Campus Safety Incident Management System
 
-# Welcome to your Lovable project
+Salus AI is a comprehensive platform designed to help educational institutions manage and analyze campus safety incidents. The system provides tools for reporting, tracking, and analyzing safety incidents, helping campus security teams make data-driven decisions to improve campus safety.
 
-## Project info
+## Features
 
-**URL**: https://lovable.dev/projects/cacd56d9-98e1-44ab-bb41-d3214434b57e
+- **Incident Management**: Create, view, and manage campus safety incidents
+- **AI-Powered Analysis**: Automatically analyze incident reports to extract key information
+- **Category Management**: Organize incidents by customizable categories
+- **Reporting Dashboard**: View trends and statistics about campus incidents
 
-## How can I edit this code?
+## Tech Stack
 
-There are several ways of editing your application.
+- **Frontend**: React, TypeScript, Tailwind CSS, shadcn/ui
+- **Database**: Supabase (PostgreSQL)
+- **Authentication**: Supabase Auth
+- **Testing**: Vitest, React Testing Library
+- **Deployment**: Vercel
 
-**Use Lovable**
+## Project Structure
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/cacd56d9-98e1-44ab-bb41-d3214434b57e) and start prompting.
+```
+salus-ai-web/
+├── public/
+├── src/
+│ ├── api/ # API client and resources
+│ │ ├── client.ts
+│ │ └── resources/
+│ ├── components/ # Reusable React components
+│ ├── config/ # Configuration files
+│ ├── contexts/ # React contexts (Auth, etc.)
+│ ├── hooks/ # Custom React hooks
+│ ├── integrations/ # Third-party integrations
+│ │ └── supabase/ # Supabase client and utilities
+│ ├── pages/ # Page components
+│ ├── styles/
+│ ├── test/
+│ ├── types/
+│ ├── utils/
+│ ├── App.tsx
+│ └── main.tsx
+├── supabase/ # Supabase edge functions
+├── package.json
+├── tsconfig.json
+└── vite.config.ts
+```
 
-Changes made via Lovable will be committed automatically to this repo.
+## Getting Started
 
-**Use your preferred IDE**
+### Prerequisites
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+- Node.js (v16 or later)
+- npm or yarn
+- Supabase account
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+### Installation
 
-Follow these steps:
+1. Clone the repository:
+   ```
+   git clone https://github.com/your-username/salus-ai.git
+   cd salus-ai
+   ```
+
+2. Install dependencies:
+   ```
+   npm install
+   # or
+   yarn install
+   ```
+
+3. Set up environment variables:
+   ```
+   touch .env.local
+   ```
+   
+   Edit `.env.local` with your Supabase credentials and other configuration.
+
+### Development
+
+Start the development server:
 
 ```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
 npm run dev
+# or
+yarn dev
 ```
 
-## Running Tests
+The application will be available at `http://localhost:8080`.
 
-This project uses Vitest for testing React components and Deno for testing edge functions.
+### Testing
 
-### Frontend Tests
-
-To run frontend tests, you need to add a test script to your package.json:
+Run tests:
 
 ```sh
-npm pkg set scripts.test="vitest run"
-npm pkg set scripts.test:watch="vitest"
-npm pkg set scripts.test:coverage="vitest run --coverage"
-```
-
-Then you can run the tests with:
-
-```sh
-# Run tests once
 npm test
-
-# Run tests in watch mode
-npm run test:watch
-
-# Run tests with coverage report
-npm run test:coverage
 ```
-
-### Edge Function Tests
-
-To run edge function tests, you need to have Deno installed. You can run the tests with:
-
-```sh
-# Navigate to the edge function directory
-cd supabase/functions/process-incident
-
-# Run tests
-deno test --allow-net --allow-read --allow-env
-```
-
-## What technologies are used for this project?
-
-This project is built with .
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-- Vitest (Testing)
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/cacd56d9-98e1-44ab-bb41-d3214434b57e) and click on Share -> Publish.
-
-## I want to use a custom domain - is that possible?
-
-We don't support custom domains (yet). If you want to deploy your project under your own domain then we recommend using Netlify. Visit our docs for more details: [Custom domains](https://docs.lovable.dev/tips-tricks/custom-domain/)
