@@ -91,6 +91,10 @@ const IncidentDetail = () => {
 
   const getStringValue = (field: keyof Incident): string => {
     const value = getValue(field);
+    if (field === 'date') {
+      return value ? value.split('T')[0] : ''
+    }
+
     return value === null || value === undefined ? '' : String(value);
   };
 

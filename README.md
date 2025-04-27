@@ -64,8 +64,6 @@ salus-ai-web/
 2. Install dependencies:
    ```
    npm install
-   # or
-   yarn install
    ```
 
 3. Set up environment variables:
