@@ -10,12 +10,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Incident, IncidentProcessingStatus } from '@/types';
+import { Incident } from '@/types';
 import { toast } from '@/components/ui/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
-import { getTodaysIncidents } from '@/integrations/supabase/tableUtils';
 import { createLogExcel, downloadFile } from '@/utils/exportUtils';
 import { cn } from '@/lib/utils';
+import { incidentsApi } from '@/api/resources/incidents';
 
 const LogTable = () => {
   const [incidents, setIncidents] = useState<Incident[]>([]);
@@ -23,42 +23,19 @@ const LogTable = () => {
   const [isDownloading, setIsDownloading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [showCleryOnly, setShowCleryOnly] = useState(false);
-  const { user } = useAuth();
+  const { session, user } = useAuth();
 
   const fetchIncidents = async () => {
     setIsLoading(true);
     
     try {
       if (user) {
-        const { data, error } = await getTodaysIncidents(user.id);
-        
-        if (error) {
-          toast({
-            title: "Error fetching incidents",
-            description: error.message,
-            variant: "destructive",
-          });
-          setIncidents([]);
-        } else {
-          const formattedIncidents: Incident[] = data.map(incident => ({
-            id: incident.id,
-            title: incident.title,
-            date: incident.date,
-            category: incident.category,
-            location: incident.location,
-            explanation: incident.explanation,
-            summary: incident.summary,
-            status: incident.status as IncidentProcessingStatus,
-            number: incident.number,
-            pdfUrl: incident.pdf_url || '',
-            filePath: incident.file_path || '',
-            uploadedAt: incident.uploaded_at,
-            uploadedBy: incident.profiles.full_name,
-            isClery: incident.is_clery || false,
-          }));
-          
-          setIncidents(formattedIncidents);
-        }
+        const incidents = await incidentsApi.getAll(session);
+
+        const startOfDay = new Date(new Date().setHours(0, 0, 0, 0)).toISOString();
+        const todayIncidents = incidents.filter(incident => incident.uploadedAt >= startOfDay);
+
+        setIncidents(todayIncidents);
       }
     } catch (error) {
       console.error('Error fetching incidents:', error);

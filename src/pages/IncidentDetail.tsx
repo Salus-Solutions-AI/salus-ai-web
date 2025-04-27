@@ -169,7 +169,6 @@ const IncidentDetail = () => {
     setDownloadingFile(true);
 
     try {
-      console.log(incident);
       const { data, error } = await downloadIncident(incident)
       if (error) throw error;
       

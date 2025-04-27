@@ -4,10 +4,6 @@ import IncidentGrid from './IncidentGrid';
 import { Incident, IncidentProcessingStatus } from '@/types';
 import { incidentsApi } from '@/api/resources/incidents';
 
-vi.mock('@/integrations/supabase/tableUtils', () => ({
-  downloadIncident: vi.fn()
-}));
-
 vi.mock('@/contexts/AuthContext', () => ({
   useAuth: () => ({
     user: { id: 'test-id' },

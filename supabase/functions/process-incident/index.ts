@@ -120,7 +120,7 @@ serve(async (req) => {
     }
     
     // Upload to S3
-    const s3Key = `textract-processing/${record.id}`
+    const s3Key = `textract-processing/${record.id}.pdf`
     await uploadToS3(s3Config, s3Key, documentBytes)
     
     const { ocrStatusUploadError } = await updateIncidentStatus(supabaseAdmin, record.id, "Processing (OCR)")

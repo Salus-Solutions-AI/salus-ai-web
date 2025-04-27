@@ -1,6 +1,6 @@
 
 import { IncidentPopulator } from "./IncidentPopulator.ts";
-import { getDocumentText, S3Object, TextractConfig } from "../utils/textractUtils.ts";
+import { pollAnalyzeDocumentJob, S3Object, startAnalyzeDocumentJob, TextractConfig, TextractJobResult } from "../utils/textractUtils.ts";
 import { queryAnthropic } from "../utils/anthropicUtils.ts";
 import { queryOpenAI } from "../utils/openAiUtils.ts";
 import { parseDate } from "../utils/dateUtils.ts";
@@ -19,13 +19,23 @@ export class DefaultIncidentPopulator implements IncidentPopulator {
   }
 
   /**
-   * Runs basic OCR on the incident PDF to extract document text
-   * @param config 
-   * @param s3Object 
-   * @returns Document text as a string
+   * Runs OCR on the incident PDF to extract document form data
+   * @param config - Textract configuration
+   * @param s3Object - S3 object containing the incident PDF
+   * @returns Document form data
    */
-  async runOCR(config: TextractConfig, s3Object: S3Object): Promise<string> {
-    return getDocumentText(config, s3Object);
+  async runOCR(config: TextractConfig, s3Object: S3Object): Promise<TextractJobResult> {
+    const jobId = await startAnalyzeDocumentJob(
+      config, 
+      s3Object
+    )
+    
+    return pollAnalyzeDocumentJob(
+      config,
+      jobId,
+      600,
+      1000,
+    )
   }
 
   /**
@@ -35,7 +45,7 @@ export class DefaultIncidentPopulator implements IncidentPopulator {
    * @param incident - The incident record to update
    * @returns The updated incident with populated fields
    */
-  async populateIncidentDetails(textractDocument: string, incident: Record<string, any>, categories: any): Promise<Record<string, any>> {
+  async populateIncidentDetails(textractFormData: Record<string, any>, incident: Record<string, any>, categories: any): Promise<Record<string, any>> {
     categories.push({
       name: "Needs more info",
       description: "Use this category if the incident needs more information in order to be classified."
@@ -45,6 +55,13 @@ export class DefaultIncidentPopulator implements IncidentPopulator {
       name: "None of the above",
       description: "Use this category if the incident does not fit into any of the other categories."
     });
+
+    let textractDocument = Object.entries(textractFormData)
+      .map(([key, value]) => `${key} ${value}`)
+      .join(" ");
+
+    console.log(textractDocument);
+
     const prompt = constructClassificationPrompt(
       textractDocument,
       categories.map(element => ({
@@ -65,13 +82,22 @@ export class DefaultIncidentPopulator implements IncidentPopulator {
       
     const classificationResponse = parseClassificationResponse(classificationLLMResponse);
 
-    const timelyWarningPrompt = constructTimelyWarningPrompt(textractDocument)
+    let requiresTimelyWarning = false;
+    if (classificationResponse.isClery) {
+      const timelyWarningPrompt = constructTimelyWarningPrompt(textractDocument)
 
-    const timelyWarningLLMResponse = this.aiService === 'openai'
-      ? await queryOpenAI(this.aiApiKey, timelyWarningPrompt)
-      : await queryAnthropic(this.aiApiKey, timelyWarningPrompt);
+      const timelyWarningLLMResponse = this.aiService === 'openai'
+        ? await queryOpenAI(this.aiApiKey, timelyWarningPrompt)
+        : await queryAnthropic(this.aiApiKey, timelyWarningPrompt);
 
-    const timelyWarningResponse = parseTimelyWarningResponse(timelyWarningLLMResponse);
+
+      const timelyWarningResponse = parseTimelyWarningResponse(timelyWarningLLMResponse);
+      requiresTimelyWarning = timelyWarningResponse;
+    }
+
+    if (classificationResponse.number.toLowerCase().includes("not provided")) {
+      classificationResponse.number = `Report ${classificationResponse.date}`;
+    }
 
     return {
       ...incident,
@@ -84,21 +110,19 @@ export class DefaultIncidentPopulator implements IncidentPopulator {
       summary: classificationResponse.summary,
       explanation: classificationResponse.explanation,
       is_clery: classificationResponse.isClery,
-      needs_more_info: classificationResponse.category.includes("Needs more info"),
-      requires_timely_warning: timelyWarningResponse,
+      needs_more_info: classificationResponse.needsMoreInfo || classificationResponse.category === "Needs more info" || classificationResponse.category === "Unknown",
+      requires_timely_warning: requiresTimelyWarning,
     };
   }
 }
 
 function constructAdditionalPromptData(): string {
-  return `Also provide the following information:
+  return `Date of incident: [date of the incident]
 
-  Date of incident: [date]
+  Time of incident: [time of the incident]
 
-  Time of incident: [time]
+  Report number of incident: [report number of the incident]
 
-  Report number of incident: [report number]
-
-  Summary of incident: [summary]
+  Summary of incident: [summary of the incident]
   ` 
 }
