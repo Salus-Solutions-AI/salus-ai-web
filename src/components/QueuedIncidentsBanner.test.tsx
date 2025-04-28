@@ -18,7 +18,8 @@ const mockQueuedIncidents: Incident[] = [
     pdfUrl: 'https://example.com/test2.pdf',
     filePath: '/test/path2.pdf',
     uploadedAt: '2025-04-01T12:00:00Z',
-    uploadedBy: 'Test User',
+    uploadedBy: 'user-id',
+    uploaderName: 'Test User',
     isClery: true,
     needsMoreInfo: false
   }

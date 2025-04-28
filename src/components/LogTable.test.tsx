@@ -32,7 +32,8 @@ const mockIncidents: Incident[] = [
     pdfUrl: 'https://example.com/test.pdf',
     filePath: '/test/path.pdf',
     uploadedAt: new Date().toISOString(),
-    uploadedBy: 'Test User',
+    uploadedBy: 'user-id',
+    uploaderName: 'Test User',
     isClery: false,
     needsMoreInfo: false
   }

@@ -19,6 +19,7 @@ export interface Incident {
   filePath: string;
   uploadedAt: string;
   uploadedBy: string;
+  uploaderName: string;
   isClery: boolean;
   needsMoreInfo?: boolean;
   requiresTimelyWarning?: boolean;

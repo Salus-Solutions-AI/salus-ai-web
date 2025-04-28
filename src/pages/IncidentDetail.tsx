@@ -651,7 +651,7 @@ Campus Safety Team`;
 
               <div>
                 <p className="text-sm font-medium">Uploaded By</p>
-                <p className="text-gray-600">{incident?.uploadedBy}</p>
+                <p className="text-gray-600">{incident?.uploaderName}</p>
               </div>
               
               <div>

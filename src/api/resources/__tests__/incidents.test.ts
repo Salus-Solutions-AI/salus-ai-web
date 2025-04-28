@@ -38,7 +38,8 @@ describe('incidentsApi', () => {
       pdfUrl: 'https://example.com/test1.pdf',
       filePath: '/test/path1.pdf',
       uploadedAt: '2023-01-01T12:00:00Z',
-      uploadedBy: 'Test User',
+      uploadedBy: 'user-id',
+      uploaderName: 'Test User',
       isClery: false,
       needsMoreInfo: false
     },
@@ -55,7 +56,8 @@ describe('incidentsApi', () => {
       pdfUrl: 'https://example.com/test2.pdf',
       filePath: '/test/path2.pdf',
       uploadedAt: '2023-01-02T12:00:00Z',
-      uploadedBy: 'Test User',
+      uploadedBy: 'user-id',
+      uploaderName: 'Test User',
       isClery: true,
       needsMoreInfo: false
     }
