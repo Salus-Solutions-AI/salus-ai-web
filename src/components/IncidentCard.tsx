@@ -156,7 +156,7 @@ const IncidentCard = ({ incident, onView, onDownload, onDelete }: IncidentCardPr
         "px-5 py-3 border-t flex justify-between items-center text-xs text-muted-foreground",
         isHovered ? "bg-secondary/50" : "bg-secondary/20"
       )}>
-        <span>Uploaded by {incident.uploadedBy}</span>
+        <span>Uploaded by {incident.uploaderName}</span>
         <span>{formatDatetime(incident.uploadedAt)}</span>
       </div>
     </div>

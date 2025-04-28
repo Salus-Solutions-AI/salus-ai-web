@@ -51,7 +51,8 @@ const mockIncident: Incident = {
   pdfUrl: 'https://example.com/test.pdf',
   filePath: '/test/path.pdf',
   uploadedAt: '2025-04-15T10:00:00Z',
-  uploadedBy: 'Test User',
+  uploadedBy: 'user-id',
+  uploaderName: 'Test User',
   isClery: false,
   needsMoreInfo: false
 };
