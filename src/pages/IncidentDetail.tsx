@@ -265,7 +265,6 @@ Description of Reported Suspect:
 [Physical description: gender, height, build, complexion, clothing, distinguishing features, direction of travel, if known.]
 (If no description available: "At this time, no suspect description is available.")
 
-
 Safety Tips:
 - Stay alert to your surroundings, especially when walking alone.
 - Avoid distractions like phones and earbuds when walking in public spaces.
