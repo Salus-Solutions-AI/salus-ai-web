@@ -9,6 +9,7 @@ const mockQueuedIncidents: Incident[] = [
     id: '1',
     title: 'Queued Incident',
     date: '2025-04-01T12:00:00Z',
+    timeStr: '12:00 PM',
     category: 'Theft',
     location: 'Student Center',
     explanation: 'Test explanation',

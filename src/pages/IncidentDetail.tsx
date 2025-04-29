@@ -48,7 +48,6 @@ const IncidentDetail = () => {
   const [editedFields, setEditedFields] = useState<Partial<Incident>>({});
   const [downloadingFile, setDownloadingFile] = useState(false);
   const [isEmailTemplateOpen, setIsEmailTemplateOpen] = useState(false);
-  const [emailCopied, setEmailCopied] = useState(false);
 
   const [subjectCopied, setSubjectCopied] = useState(false);
   const [bodyCopied, setBodyCopied] = useState(false);
@@ -76,10 +75,26 @@ const IncidentDetail = () => {
   }, [id]);
 
   const handleChange = (field: keyof Incident, value: any) => {
-    setEditedFields(prev => ({
-      ...prev,
-      [field]: value
-    }));
+    if (field === 'needsMoreInfo' && value === true) {
+      setEditedFields(prev => ({
+        ...prev,
+        [field]: value,
+        requiresTimelyWarning: false
+      }));
+    }
+    else if (field === 'requiresTimelyWarning' && value === true) {
+      setEditedFields(prev => ({
+        ...prev,
+        [field]: value,
+        needsMoreInfo: false
+      }));
+    }
+    else {
+      setEditedFields(prev => ({
+        ...prev,
+        [field]: value
+      }));
+    }
   };
 
   const getValue = (field: keyof Incident): any => {
@@ -204,8 +219,6 @@ const IncidentDetail = () => {
   const handleCopyEmailTemplate = () => {
     const template = generateEmailTemplate();
     navigator.clipboard.writeText(template);
-    setEmailCopied(true);
-    setTimeout(() => setEmailCopied(false), 2000);
     
     toast({
       title: "Copied to clipboard",
@@ -251,16 +264,13 @@ Campus Safety Team`;
     if (incident.requiresTimelyWarning) {
       return `Timely Warning Notification
       
-Incident: #${incident.category}
+Incident: ${incident.category}
 Date/Time Reported: ${formatDate(incident.uploadedAt)}
 Date/Time Occurred: ${formatDate(incident.date)} ${incident.timeStr}
 Location: ${incident.location}
 
 Incident Summary:
-On [Day, Date], at approximately [Time], the Department of [Campus Safety/Public Safety] received a report of a [describe incident briefly, e.g., robbery, assault, suspicious activity] that occurred [location details].
-The victim, a [student/staff member/visitor], reported that [brief, neutral description of what happened — avoid unnecessary detail].
-[Include injury info if applicable, e.g., "Minor injuries were reported."] [Mention if support services were offered.] 
-[Mention if law enforcement was contacted.]
+${incident.summary}
 
 Description of Reported Suspect:
 [Physical description: gender, height, build, complexion, clothing, distinguishing features, direction of travel, if known.]
@@ -608,6 +618,10 @@ Campus Safety Team`;
                     <AlertTriangle className="ml-1 h-4 w-4 text-amber-500" />
                   </span>
                 </Label>
+              </div>
+              
+              <div className="text-xs text-muted-foreground mt-1">
+                Note: "Needs More Information" and "Requires Timely Warning" cannot both be selected.
               </div>
               
               <div>
