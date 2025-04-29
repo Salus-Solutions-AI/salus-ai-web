@@ -266,27 +266,11 @@ Description of Reported Suspect:
 [Physical description: gender, height, build, complexion, clothing, distinguishing features, direction of travel, if known.]
 (If no description available: "At this time, no suspect description is available.")
 
-If You Have Information:
-Please contact [Campus Safety/Public Safety] at [phone number] or [email address].
-[Optional: Include anonymous tip line if available.]
-
 Safety Tips:
 - Stay alert to your surroundings, especially when walking alone.
 - Avoid distractions like phones and earbuds when walking in public spaces.
 - Walk with others whenever possible, especially at night. 
-- Report any suspicious behavior to Campus Safety immediately.
-
-[School Name] students can access confidential counseling or medical support through [Health Services/Wellness Center] at [phone number] 24/7.
-Faculty and staff can access confidential support through [Employee Assistance Program] at [phone number].
-
-Emergency Contacts:
-  - In an emergency, call 911.
-  - For non-emergency assistance, contact [Campus Safety/Public Safety] at [phone number].
-
-Additional Information:
-  - [Link to timely warning policy]
-  - [Link to Caampus Safety Services and FAQ]
-      ` ;
+- Report any suspicious behavior to Campus Safety immediately.`;
     }
 
     return `Hello,
