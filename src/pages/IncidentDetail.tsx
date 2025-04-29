@@ -251,21 +251,21 @@ const IncidentDetail = () => {
     if (!incident) return "";
     
     if (incident.requiresTimelyWarning) {
-      return `**Timely Warning Notification**
+      return `Timely Warning Notification
       
-**Incident:** ${incident.category}
-**Date/Time Reported:** ${formatDate(incident.uploadedAt)}
-**Date/Time Occurred:** ${formatDate(incident.date)} ${incident.timeStr}
-**Location:** ${incident.location}
+Incident: ${incident.category}
+Date/Time Reported: ${formatDate(incident.uploadedAt)}
+Date/Time Occurred: ${formatDate(incident.date)} ${incident.timeStr}
+Location: ${incident.location}
 
-**Incident Summary:**
+Incident Summary:
 ${incident.summary}
 
-**Description of Reported Suspect:**
+Description of Reported Suspect:
 [Physical description: gender, height, build, complexion, clothing, distinguishing features, direction of travel, if known.]
 (If no description available: "At this time, no suspect description is available.")
 
-**Safety Tips:**
+Safety Tips:
 - Stay alert to your surroundings, especially when walking alone.
 - Avoid distractions like phones and earbuds when walking in public spaces.
 - Walk with others whenever possible, especially at night. 
@@ -277,7 +277,6 @@ ${incident.summary}
 We are reviewing incident #${incident.number} "${incident.title}" that occurred on ${formatDate(incident.date)} at ${incident.location}.
 
 We need additional information to properly process this incident. Specifically, we need:
-
 1. More detailed explanation of the events
 2. Names of any witnesses
 3. Any additional documentation or evidence
