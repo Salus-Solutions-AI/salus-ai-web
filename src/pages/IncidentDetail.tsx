@@ -48,7 +48,6 @@ const IncidentDetail = () => {
   const [editedFields, setEditedFields] = useState<Partial<Incident>>({});
   const [downloadingFile, setDownloadingFile] = useState(false);
   const [isEmailTemplateOpen, setIsEmailTemplateOpen] = useState(false);
-  const [emailCopied, setEmailCopied] = useState(false);
 
   const [subjectCopied, setSubjectCopied] = useState(false);
   const [bodyCopied, setBodyCopied] = useState(false);
@@ -76,10 +75,26 @@ const IncidentDetail = () => {
   }, [id]);
 
   const handleChange = (field: keyof Incident, value: any) => {
-    setEditedFields(prev => ({
-      ...prev,
-      [field]: value
-    }));
+    if (field === 'needsMoreInfo' && value === true) {
+      setEditedFields(prev => ({
+        ...prev,
+        [field]: value,
+        requiresTimelyWarning: false
+      }));
+    }
+    else if (field === 'requiresTimelyWarning' && value === true) {
+      setEditedFields(prev => ({
+        ...prev,
+        [field]: value,
+        needsMoreInfo: false
+      }));
+    }
+    else {
+      setEditedFields(prev => ({
+        ...prev,
+        [field]: value
+      }));
+    }
   };
 
   const getValue = (field: keyof Incident): any => {
@@ -201,42 +216,33 @@ const IncidentDetail = () => {
     }
   };
 
-  const handleCopyEmailTemplate = () => {
-    const template = generateEmailTemplate();
-    navigator.clipboard.writeText(template);
-    setEmailCopied(true);
-    setTimeout(() => setEmailCopied(false), 2000);
-    
-    toast({
-      title: "Copied to clipboard",
-      description: "Email template has been copied to your clipboard",
-      variant: "success",
-    });
-  };
-
-  const generateEmailTemplate = () => {
+  const generateEmailTemplateHeader = () => {
     if (!incident) return "";
-    
-    return `Subject: Additional Information Needed for Incident #${incident.number}
 
-Hello,
+    if (incident.requiresTimelyWarning) {
+      return 'Timely Warning Notification';
+    }
 
-We are reviewing incident #${incident.number} "${incident.title}" that occurred on ${formatDate(incident.date)} at ${incident.location}.
-
-We need additional information to properly process this incident. Specifically, we need:
-
-1. More detailed explanation of the events
-2. Names of any witnesses
-3. Any additional documentation or evidence
-
-Please reply to this email with the requested information at your earliest convenience.
-
-Thank you,
-Campus Safety Team`;
+    return 'Request Additional Information';
   };
+
+  const generateEmailTemplateDescription = () => {
+    if (!incident) return "";
+
+    if (incident.requiresTimelyWarning) {
+      return 'Copy this email template to send a timely warning notification to the campus community.';
+    }
+
+    return 'Copy this email template to request more information about this incident.';
+  };
+
 
   const generateEmailSubject = () => {
     if (!incident) return "";
+
+    if (incident.requiresTimelyWarning) {
+      return `Timely Warning: ${incident.category} Near ${incident.location}`;
+    }
     
     return `Additional Information Needed for Incident #${incident.number}`;
   };
@@ -244,6 +250,28 @@ Campus Safety Team`;
   const generateEmailBody = () => {
     if (!incident) return "";
     
+    if (incident.requiresTimelyWarning) {
+      return `**Timely Warning Notification**
+      
+**Incident:** ${incident.category}
+**Date/Time Reported:** ${formatDate(incident.uploadedAt)}
+**Date/Time Occurred:** ${formatDate(incident.date)} ${incident.timeStr}
+**Location:** ${incident.location}
+
+**Incident Summary:**
+${incident.summary}
+
+**Description of Reported Suspect:**
+[Physical description: gender, height, build, complexion, clothing, distinguishing features, direction of travel, if known.]
+(If no description available: "At this time, no suspect description is available.")
+
+**Safety Tips:**
+- Stay alert to your surroundings, especially when walking alone.
+- Avoid distractions like phones and earbuds when walking in public spaces.
+- Walk with others whenever possible, especially at night. 
+- Report any suspicious behavior to Campus Safety immediately.`;
+    }
+
     return `Hello,
 
 We are reviewing incident #${incident.number} "${incident.title}" that occurred on ${formatDate(incident.date)} at ${incident.location}.
@@ -355,6 +383,15 @@ Campus Safety Team`;
                 Generate Email Template
               </Button>
             )}
+            {incident?.requiresTimelyWarning && (
+              <Button
+                onClick={() => setIsEmailTemplateOpen(true)}
+                className="bg-red-100 text-red-800 hover:bg-red-200 border border-red-300"
+              >
+                <Mail className="mr-2 h-4 w-4" />
+                Generate Email Template
+              </Button>
+            )}
             
             {isCompleted ? (
               <Badge variant="outline" className="bg-green-100 text-green-800">
@@ -458,7 +495,10 @@ Campus Safety Team`;
                 <div className="bg-red-50 p-4 rounded-md border border-red-200 mb-4">
                   <div className="flex items-center gap-2 text-red-800 font-medium mb-2">
                     <AlertTriangle className="h-5 w-5" />
-                    <span>This incident requires a timely warning</span>
+                    <p className="text-red-700 text-sm">
+                      This incident requires a timely warning.
+                      Use the "Generate Email Template" button to generate the timely warning email.
+                    </p>
                   </div>
                 </div>
               )}
@@ -668,10 +708,10 @@ Campus Safety Team`;
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Mail className="h-5 w-5" />
-              Request Additional Information
+              {generateEmailTemplateHeader()}
             </DialogTitle>
             <DialogDescription>
-              Copy this email template to request more information about this incident.
+              {generateEmailTemplateDescription()}
             </DialogDescription>
           </DialogHeader>
           

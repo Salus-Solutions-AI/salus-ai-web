@@ -42,6 +42,7 @@ const mockIncident: Incident = {
   id: '123',
   title: 'Test Incident',
   date: '2025-04-15',
+  timeStr: '12:00 PM',
   category: 'Theft',
   location: 'Library',
   explanation: 'Test explanation',

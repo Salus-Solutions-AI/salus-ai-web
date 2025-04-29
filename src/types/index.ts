@@ -9,6 +9,7 @@ export interface Incident {
   id: string;
   title: string;
   date: string;
+  timeStr: string;
   category: string;
   location: string;
   explanation: string;

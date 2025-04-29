@@ -84,6 +84,9 @@ export class DefaultIncidentPopulator implements IncidentPopulator {
 
     let requiresTimelyWarning = false;
     if (classificationResponse.isClery) {
+      // wait one second
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
       const timelyWarningPrompt = constructTimelyWarningPrompt(textractDocument)
 
       const timelyWarningLLMResponse = this.aiService === 'openai'

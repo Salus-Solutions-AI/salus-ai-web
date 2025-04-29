@@ -23,6 +23,7 @@ const mockIncidents: Incident[] = [
     id: '1',
     title: 'Test Incident',
     date: '2025-04-01T12:00:00Z',
+    timeStr: '12:00 PM',
     category: 'Burglary',
     location: 'Campus Library',
     explanation: 'Test explanation',
