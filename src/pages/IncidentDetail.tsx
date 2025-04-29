@@ -609,10 +609,6 @@ Campus Safety Team`;
                 </Label>
               </div>
               
-              <div className="text-xs text-muted-foreground mt-1">
-                Note: "Needs More Information" and "Requires Timely Warning" cannot both be selected.
-              </div>
-              
               <div>
                 <Label htmlFor="summary">Summary</Label>
                 <Textarea
