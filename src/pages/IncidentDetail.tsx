@@ -237,6 +237,10 @@ Campus Safety Team`;
 
   const generateEmailSubject = () => {
     if (!incident) return "";
+
+    if (incident.requiresTimelyWarning) {
+      return `Timely Warning: ${incident.category} Near ${incident.location}`;
+    }
     
     return `Additional Information Needed for Incident #${incident.number}`;
   };
@@ -244,6 +248,47 @@ Campus Safety Team`;
   const generateEmailBody = () => {
     if (!incident) return "";
     
+    if (incident.requiresTimelyWarning) {
+      return `Timely Warning Notification
+      
+Incident: #${incident.category}
+Date/Time Reported: ${formatDate(incident.uploadedAt)}
+Date/Time Occurred: ${formatDate(incident.date)} ${incident.timeStr}
+Location: ${incident.location}
+
+Incident Summary:
+On [Day, Date], at approximately [Time], the Department of [Campus Safety/Public Safety] received a report of a [describe incident briefly, e.g., robbery, assault, suspicious activity] that occurred [location details].
+The victim, a [student/staff member/visitor], reported that [brief, neutral description of what happened — avoid unnecessary detail].
+[Include injury info if applicable, e.g., "Minor injuries were reported."] [Mention if support services were offered.] 
+[Mention if law enforcement was contacted.]
+
+Description of Reported Suspect:
+[Physical description: gender, height, build, complexion, clothing, distinguishing features, direction of travel, if known.]
+(If no description available: "At this time, no suspect description is available.")
+
+If You Have Information:
+Please contact [Campus Safety/Public Safety] at [phone number] or [email address].
+[Optional: Include anonymous tip line if available.]
+
+Safety Tips:
+- Stay alert to your surroundings, especially when walking alone.
+- Avoid distractions like phones and earbuds when walking in public spaces.
+- Walk with others whenever possible, especially at night. 
+- Report any suspicious behavior to Campus Safety immediately.
+
+[School Name] students can access confidential counseling or medical support through [Health Services/Wellness Center] at [phone number] 24/7.
+Faculty and staff can access confidential support through [Employee Assistance Program] at [phone number].
+
+Emergency Contacts:
+  - In an emergency, call 911.
+  - For non-emergency assistance, contact [Campus Safety/Public Safety] at [phone number].
+
+Additional Information:
+  - [Link to timely warning policy]
+  - [Link to Caampus Safety Services and FAQ]
+      ` ;
+    }
+
     return `Hello,
 
 We are reviewing incident #${incident.number} "${incident.title}" that occurred on ${formatDate(incident.date)} at ${incident.location}.
@@ -355,6 +400,15 @@ Campus Safety Team`;
                 Generate Email Template
               </Button>
             )}
+            {incident?.requiresTimelyWarning && (
+              <Button
+                onClick={() => setIsEmailTemplateOpen(true)}
+                className="bg-red-100 text-red-800 hover:bg-red-200 border border-red-300"
+              >
+                <Mail className="mr-2 h-4 w-4" />
+                Generate Email Template
+              </Button>
+            )}
             
             {isCompleted ? (
               <Badge variant="outline" className="bg-green-100 text-green-800">
@@ -458,7 +512,10 @@ Campus Safety Team`;
                 <div className="bg-red-50 p-4 rounded-md border border-red-200 mb-4">
                   <div className="flex items-center gap-2 text-red-800 font-medium mb-2">
                     <AlertTriangle className="h-5 w-5" />
-                    <span>This incident requires a timely warning</span>
+                    <p className="text-red-700 text-sm">
+                      This incident requires a timely warning.
+                      Use the "Generate Email Template" button to generate the timely warning email.
+                    </p>
                   </div>
                 </div>
               )}
