@@ -1,11 +1,4 @@
-
 import { supabase } from '@/integrations/supabase/client';
-
-export const downloadIncident = (incident) => {
-    return supabase.storage
-    .from('incidents')
-    .download(incident.filePath);
-}
 
 export const uploadLog = (filePath, content) => {
     return supabase.storage
