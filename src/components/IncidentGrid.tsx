@@ -109,9 +109,9 @@ const IncidentGrid = ({ refresh, refreshQueuedOnly, queuedIncidents, setQueuedIn
     }
   }, [refreshQueuedOnly]);
 
-  const handleViewIncident = (pdfUrl: string) => {
-    if (pdfUrl) {
-      window.open(pdfUrl, '_blank');
+  const handleViewIncident = (url: string) => {
+    if (url) {
+      window.open(url, '_blank');
     } else {
       toast({
         title: "No PDF available",
@@ -328,7 +328,7 @@ const IncidentGrid = ({ refresh, refreshQueuedOnly, queuedIncidents, setQueuedIn
                         size="sm"
                         onClick={(e) => {
                           e.stopPropagation();
-                          handleViewIncident(incident.pdfUrl);
+                          handleViewIncident(incident.preSignedUrl);
                         }}
                       >
                         <Eye className="h-4 w-4" />

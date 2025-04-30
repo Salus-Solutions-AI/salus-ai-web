@@ -17,6 +17,7 @@ export interface Incident {
   status: IncidentProcessingStatus;
   number: string;
   pdfUrl: string;
+  preSignedUrl: string;
   filePath: string;
   uploadedAt: string;
   uploadedBy: string;

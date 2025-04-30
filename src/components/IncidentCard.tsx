@@ -73,15 +73,15 @@ const IncidentCard = ({ incident, onView, onDownload, onDelete }: IncidentCardPr
             <DropdownMenuContent align="end" className="w-48">
               <DropdownMenuItem onClick={(e) => {
                 e.stopPropagation();
-                onView(incident.pdfUrl);
-              }} disabled={!incident.pdfUrl}>
+                onView(incident.preSignedUrl);
+              }} disabled={!incident.preSignedUrl}>
                 <Eye className="mr-2 h-4 w-4" />
                 <span>View Document</span>
               </DropdownMenuItem>
               <DropdownMenuItem onClick={(e) => {
                 e.stopPropagation();
                 onDownload(incident);
-              }} disabled={!incident.pdfUrl || isDownloading}>
+              }} disabled={!incident.preSignedUrl || isDownloading}>
                 {isDownloading ? (
                   <>
                     <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />

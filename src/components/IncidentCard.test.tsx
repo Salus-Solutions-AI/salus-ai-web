@@ -50,6 +50,7 @@ const mockIncident: Incident = {
   status: IncidentProcessingStatus.COMPLETED,
   number: 'INC-001',
   pdfUrl: 'https://example.com/test.pdf',
+  preSignedUrl: 'https://example.pre-signed.com/test.pdf',
   filePath: '/test/path.pdf',
   uploadedAt: '2025-04-15T10:00:00Z',
   uploadedBy: 'user-id',
@@ -108,7 +109,7 @@ describe('IncidentCard', () => {
     const viewOption = screen.getByText('View Document');
     fireEvent.click(viewOption);
     
-    expect(mockProps.onView).toHaveBeenCalledWith(mockIncident.pdfUrl);
+    expect(mockProps.onView).toHaveBeenCalledWith(mockIncident.preSignedUrl);
   });
 
   it('calls onDownload when Download PDF is clicked', () => {
