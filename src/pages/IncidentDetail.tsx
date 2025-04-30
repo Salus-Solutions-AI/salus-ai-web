@@ -188,14 +188,8 @@ const IncidentDetail = () => {
 
     try {
       if (!incident.preSignedUrl) {
-        throw new Error("No pre-signed URL available for this incident");
+        throw new Error("No pre-signed URL available for this incident.");
       }
-      
-      toast({
-        title: "Downloading...",
-        description: `Downloading ${incident.title}. Please wait.`,
-        variant: "default",
-      });
       
       const response = await fetch(incident.preSignedUrl);
       
