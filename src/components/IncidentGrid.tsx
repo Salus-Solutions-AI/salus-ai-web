@@ -126,9 +126,11 @@ const IncidentGrid = ({ refresh, refreshQueuedOnly, queuedIncidents, setQueuedIn
         throw new Error("No pre-signed URL available for this incident");
       }
       
-      const response = await fetch(incident.preSignedUrl, {
-        mode: 'no-cors'  // This prevents CORS errors but makes the response "opaque"
-      });
+      const response = await fetch(incident.preSignedUrl);
+      
+      if (!response.ok) {
+        throw new Error(`Failed to download: ${response.status} ${response.statusText}`);
+      }
       
       const fileBlob = await response.blob();
       
