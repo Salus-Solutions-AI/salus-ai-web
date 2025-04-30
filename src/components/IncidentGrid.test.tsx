@@ -44,6 +44,7 @@ const mockIncidents: Incident[] = [
     status: IncidentProcessingStatus.PENDING,
     number: 'INC-001',
     pdfUrl: 'https://example.com/test.pdf',
+    preSignedUrl: 'https://example.com/test.pdf',
     filePath: '/test/path.pdf',
     uploadedAt: '2025-04-01T12:00:00Z',
     uploadedBy: 'user-id',
