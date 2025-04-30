@@ -9,10 +9,11 @@ export const incidentsApi = {
   getById: (session: Session, id: string) =>
     apiRequest<Incident>(`/api/incidents/${id}`, session),
 
-  create: (session: Session, data: Partial<Incident>) =>
+  create: (session: Session, data: FormData) =>
     apiRequest<Incident>('/api/incidents', session, {
       method: 'POST',
-      body: JSON.stringify(data),
+      body: data,
+      headers: {},
     }),
 
   update: (session: Session, id: string, data: Partial<Incident>) =>
