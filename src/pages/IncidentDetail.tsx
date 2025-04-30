@@ -191,30 +191,30 @@ const IncidentDetail = () => {
         throw new Error("No pre-signed URL available for this incident");
       }
       
-      const iframe = document.createElement('iframe');
-      iframe.style.display = 'none';
-      document.body.appendChild(iframe);
+      toast({
+        title: "Downloading...",
+        description: `Downloading ${incident.title}. Please wait.`,
+        variant: "default",
+      });
       
-      // Write a form to the iframe that submits automatically
-      iframe.contentDocument.write(`
-        <html>
-          <body>
-            <form method="GET" action="${incident.preSignedUrl}">
-              <input type="submit" value="Download" />
-            </form>
-            <script>
-              document.forms[0].submit();
-            </script>
-          </body>
-        </html>
-      `);
+      const response = await fetch(incident.preSignedUrl);
       
-      // Remove the iframe after a short delay
-      setTimeout(() => {
-        if (document.body.contains(iframe)) {
-          document.body.removeChild(iframe);
-        }
-      }, 5000);
+      if (!response.ok) {
+        throw new Error(`Failed to download: ${response.status} ${response.statusText}`);
+      }
+      
+      const fileBlob = await response.blob();
+      
+      const url = URL.createObjectURL(fileBlob);
+      const a = document.createElement('a');
+      a.href = url;
+      
+      a.download = `${incident.title}.pdf`
+      document.body.appendChild(a);
+      a.click();
+      
+      URL.revokeObjectURL(url);
+      document.body.removeChild(a);
       
       toast({
         title: "Download Successful",
