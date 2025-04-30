@@ -309,9 +309,13 @@ const IncidentGrid = ({ refresh, refreshQueuedOnly, queuedIncidents, setQueuedIn
                         <Badge variant="outline" className={getStatusColor(incident.status)}>
                           {incident.status}
                         </Badge>
-                        {incident.isClery && (
+                        {incident.isClery ? (
                           <Badge variant="outline" className="bg-[#8B5CF6]/10 text-[#8B5CF6] border-[#8B5CF6]/20">
                             Clery
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline" className="bg-gray-100 text-gray-600 border-gray-200">
+                            Non-Clery
                           </Badge>
                         )}
                         {incident.needsMoreInfo && (
