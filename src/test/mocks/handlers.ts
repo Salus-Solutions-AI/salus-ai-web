@@ -8,6 +8,7 @@ const mockIncidents: Incident[] = [
     id: '1',
     title: 'Test Incident',
     date: '2025-04-01T12:00:00Z',
+    timeStr: '12:00 PM',
     category: 'Burglary',
     location: 'Campus Library',
     explanation: 'Test explanation',
@@ -15,9 +16,11 @@ const mockIncidents: Incident[] = [
     status: IncidentProcessingStatus.PENDING,
     number: 'INC-001',
     pdfUrl: 'https://example.com/test.pdf',
+    preSignedUrl: 'https://example-pre-signed.com/test.pdf',
     filePath: '/test/path.pdf',
     uploadedAt: '2025-04-01T12:00:00Z',
-    uploadedBy: 'Test User',
+    uploadedBy: '1234567890',
+    uploaderName: 'Test User',
     isClery: false,
     needsMoreInfo: false
   }

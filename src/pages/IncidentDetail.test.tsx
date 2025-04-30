@@ -21,10 +21,6 @@ vi.mock('react-router-dom', async () => {
     };
 });
 
-vi.mock('@/integrations/supabase/storageUtils', () => ({
-  downloadIncident: vi.fn()
-}));
-
 vi.mock('@/components/ui/use-toast', () => ({
   toast: vi.fn()
 }));

@@ -17,7 +17,7 @@ import { formatDate, formatDatetime } from '@/utils/dateUtils';
 
 interface IncidentCardProps {
   incident: Incident;
-  onView: (pdfUrl: string) => void;
+  onView: (url: string) => void;
   onDownload: (incident: Incident) => void;
   onDelete: (id: string) => void;
 }
