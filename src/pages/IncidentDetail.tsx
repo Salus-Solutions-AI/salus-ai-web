@@ -191,21 +191,16 @@ const IncidentDetail = () => {
         throw new Error("No pre-signed URL available for this incident");
       }
       
-      const response = await fetch(incident.preSignedUrl, {
-        mode: 'no-cors'  // This prevents CORS errors but makes the response "opaque"
-      });
-      
-      const fileBlob = await response.blob();
-      
-      const url = URL.createObjectURL(fileBlob);
       const a = document.createElement('a');
-      a.href = url;
-      
-      a.download = `${incident.title}.pdf`
+      a.href = incident.preSignedUrl;
+
+      a.setAttribute('download', `${incident.title}.pdf`);
+      a.setAttribute('target', '_blank');
+
       document.body.appendChild(a);
+
       a.click();
-      
-      URL.revokeObjectURL(url);
+
       document.body.removeChild(a);
       
       toast({
