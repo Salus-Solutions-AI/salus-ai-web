@@ -1,43 +1,57 @@
-
-import { S3Client, PutObjectCommand } from 'npm:@aws-sdk/client-s3';
-
-export interface S3Config {
-  region: string;
-  accessKeyId: string;
-  secretAccessKey: string;
-  bucket: string;
+type S3Config = {
+  bucketName: string,
+  key: string,
 }
 
 /**
- * Uploads a document to an S3 bucket
- * @param config - S3 configuration parameters
- * @param key - The S3 object key
- * @param document - The document bytes to upload
- * @returns Promise resolving to the S3 object key
+ * Parse an Amazon S3 URL to extract the bucket name and key
+ * @param {string} url - The S3 URL to parse
+ * @returns {S3Config|null} An S3Config object containing bucketName and key, or null if parsing fails
  */
-export async function uploadToS3(
-  config: S3Config,
-  key: string,
-  document: Uint8Array
-): Promise<string> {
-  console.log(`Uploading file to S3: ${config.bucket}/${key}`);
-  
-  const s3Client = new S3Client({ 
-    region: config.region, 
-    credentials: {
-      accessKeyId: config.accessKeyId,
-      secretAccessKey: config.secretAccessKey,
-    } 
-  });
+export function parseS3Url(url: string): S3Config | null {
+  if (!url || typeof url !== 'string') {
+    console.error('Invalid URL provided:', url);
+    return null;
+  }
 
-  const uploadCommand = new PutObjectCommand({
-    Bucket: config.bucket,
-    Key: key,
-    Body: document,
-    ContentType: 'application/pdf',
-  });
-
-  await s3Client.send(uploadCommand);
-  
-  return key;
+  try {
+    // Handle standard format: https://bucket-name.s3.region.amazonaws.com/key
+    const standardPattern = /^https?:\/\/([^.]+)\.s3\.([^.]+\.)?amazonaws\.com\/(.+)$/;
+    let match = url.match(standardPattern);
+    
+    if (match) {
+      return {
+        bucketName: match[1],
+        key: match[3]
+      };
+    }
+    
+    // Handle path-style format: https://s3.region.amazonaws.com/bucket-name/key
+    const pathStylePattern = /^https?:\/\/s3\.([^.]+\.)?amazonaws\.com\/([^\/]+)\/(.+)$/;
+    match = url.match(pathStylePattern);
+    
+    if (match) {
+      return {
+        bucketName: match[2],
+        key: match[3]
+      };
+    }
+    
+    // Handle virtual hosted-style: https://bucket-name.s3-region.amazonaws.com/key
+    const virtualHostedPattern = /^https?:\/\/([^.]+)\.s3-([^.]+)\.amazonaws\.com\/(.+)$/;
+    match = url.match(virtualHostedPattern);
+    
+    if (match) {
+      return {
+        bucketName: match[1],
+        key: match[3]
+      };
+    }
+    
+    console.error('URL does not match known S3 URL patterns:', url);
+    return null;
+  } catch (error) {
+    console.error('Error parsing S3 URL:', error);
+    return null;
+  }
 }

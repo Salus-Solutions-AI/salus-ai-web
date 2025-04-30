@@ -1,7 +1,7 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'npm:@supabase/supabase-js'
-import { uploadToS3, type S3Config } from './utils/s3Utils.ts'
 import { type TextractConfig } from './utils/textractUtils.ts'
+import { parseS3Url } from './utils/s3Utils.ts'
 import { IncidentPopulatorFactory } from './templates/IncidentPopulatorFactory.ts'
 
 const corsHeaders = {
@@ -62,7 +62,7 @@ serve(async (req) => {
       )
     }
 
-    const { uploadStatusUpdateError } = await updateIncidentStatus(supabaseAdmin, record.id, "Processing (Upload)")
+    const { uploadStatusUpdateError } = await updateIncidentStatus(supabaseAdmin, record.id, "Processing (OCR)")
     if (uploadStatusUpdateError) {
       console.error('Error updating incident status:', uploadStatusUpdateError)
       return new Response(
@@ -95,10 +95,21 @@ serve(async (req) => {
       secretAccessKey: AWS_SECRET_ACCESS_KEY
     }
 
-    const { bucketName, key } = parseS3Url(record.pdfUrl)
+    const s3Config = parseS3Url(record.pdf_url)
+    if (!s3Config) {
+      console.error('Unable to parse S3 URL:', record.pdf_url)
+      return new Response(
+        JSON.stringify({ error: `Unable to parse S3 URL ${record.pdf_url}`}),
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 500 
+        }
+      )
+    }
+
     const s3Object = {
-      bucket: bucketName,
-      key: key
+      bucket: s3Config?.bucketName,
+      key: s3Config?.key,
     }
     
     const result = await incidentPopulator.runOCR(textractConfig, s3Object)
@@ -178,37 +189,4 @@ async function updateIncidentStatus(supabaseAdmin: any, incidentId: string, stat
     .update({ status: status })
     .eq('id', incidentId)
     .select()
-}
-
-function parseS3Url(url: string): { bucketName: string, key: string } {
-  // Regular expression to match S3 URLs
-  // Capturing groups: 
-  // 1. Protocol (http or https)
-  // 2. Bucket name
-  // 3. Key (everything after the bucket in the path)
-  const regex = /^(https?):\/\/([^.]+)\.s3\.(?:[^/]+)\.amazonaws\.com\/(.+)$/;
-  
-  // Alternative format: https://s3.region.amazonaws.com/bucket/key
-  const altRegex = /^(https?):\/\/s3\.(?:[^/]+)\.amazonaws\.com\/([^/]+)\/(.+)$/;
-  
-  let match = url.match(regex);
-  
-  if (match) {
-    return {
-      bucketName: match[2],
-      key: match[3]
-    };
-  }
-  
-  // Try the alternative format
-  match = url.match(altRegex);
-  
-  if (match) {
-    return {
-      bucketName: match[2],
-      key: match[3]
-    };
-  }
-  
-  throw Error(`unable to parse S3 URL: ${url}`)
 }
