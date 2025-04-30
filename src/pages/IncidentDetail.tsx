@@ -191,17 +191,30 @@ const IncidentDetail = () => {
         throw new Error("No pre-signed URL available for this incident");
       }
       
-      const a = document.createElement('a');
-      a.href = incident.preSignedUrl;
-
-      a.setAttribute('download', `${incident.title}.pdf`);
-      a.setAttribute('target', '_blank');
-
-      document.body.appendChild(a);
-
-      a.click();
-
-      document.body.removeChild(a);
+      const iframe = document.createElement('iframe');
+      iframe.style.display = 'none';
+      document.body.appendChild(iframe);
+      
+      // Write a form to the iframe that submits automatically
+      iframe.contentDocument.write(`
+        <html>
+          <body>
+            <form method="GET" action="${incident.preSignedUrl}">
+              <input type="submit" value="Download" />
+            </form>
+            <script>
+              document.forms[0].submit();
+            </script>
+          </body>
+        </html>
+      `);
+      
+      // Remove the iframe after a short delay
+      setTimeout(() => {
+        if (document.body.contains(iframe)) {
+          document.body.removeChild(iframe);
+        }
+      }, 5000);
       
       toast({
         title: "Download Successful",
