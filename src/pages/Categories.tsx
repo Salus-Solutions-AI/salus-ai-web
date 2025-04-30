@@ -46,8 +46,6 @@ const Categories = () => {
     try {
       setIsLoading(true);
 
-      console.log('fetching categories');
-
       const profile = await profilesApi.getById(session, user.id);
 
       if (!profile.createdCategories) {

@@ -2,7 +2,6 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { defaultCategoriesApi } from '../default_categories';
 import * as apiClient from '../../client';
 
-// Mock the apiRequest function
 vi.mock('../../client', () => ({
   apiRequest: vi.fn(),
 }));

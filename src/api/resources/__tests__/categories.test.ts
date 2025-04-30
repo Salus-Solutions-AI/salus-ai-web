@@ -2,7 +2,6 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { categoriesApi } from '../categories';
 import * as apiClient from '../../client';
 
-// Mock the apiRequest function
 vi.mock('../../client', () => ({
   apiRequest: vi.fn(),
 }));
@@ -59,6 +58,7 @@ describe('categoriesApi', () => {
         mockSession,
         {
           method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(newCategory),
         }
       );
@@ -79,6 +79,7 @@ describe('categoriesApi', () => {
         mockSession,
         {
           method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(updateData),
         }
       );

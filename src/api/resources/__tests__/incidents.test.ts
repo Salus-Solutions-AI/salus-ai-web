@@ -3,7 +3,6 @@ import { incidentsApi } from '../incidents';
 import * as apiClient from '../../client';
 import { IncidentProcessingStatus } from '@/types';
 
-// Mock the apiRequest function
 vi.mock('../../client', () => ({
   apiRequest: vi.fn(),
 }));
@@ -139,6 +138,7 @@ describe('incidentsApi', () => {
         mockSession,
         {
           method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(updateData),
         }
       );

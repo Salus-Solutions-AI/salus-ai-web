@@ -57,24 +57,21 @@ describe('Navbar Component', () => {
     const signInButton = screen.getByText('Sign In');
     expect(signInButton).toBeInTheDocument();
     
-    // Ensure user dropdown is not present
     expect(screen.queryByText('My Account')).not.toBeInTheDocument();
   });
 
   it('displays user dropdown when user is authenticated', () => {
     (useAuth as any).mockReturnValue({
       user: mockUser,
-      profile: { full_name: 'Test User' },
+      profile: { fullName: 'Test User' },
       signOut: vi.fn()
     });
 
     render(<Navbar />);
     
-    // Check if user name is shown
     const userButton = screen.getByText('Test User');
     expect(userButton).toBeInTheDocument();
     
-    // Ensure sign in button is not present
     expect(screen.queryByText(/Sign In/i)).not.toBeInTheDocument();
   });
 });

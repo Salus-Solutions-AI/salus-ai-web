@@ -37,13 +37,10 @@ describe('profilesApi', () => {
 
   describe('getById', () => {
     it('should call apiRequest with the correct parameters', async () => {
-      // Setup
       vi.mocked(apiClient.apiRequest).mockResolvedValueOnce(mockProfile);
 
-      // Execute
       const result = await profilesApi.getById(mockSession, 'user-id');
 
-      // Verify
       expect(apiClient.apiRequest).toHaveBeenCalledWith(
         '/api/profiles/user-id',
         mockSession,
@@ -54,20 +51,18 @@ describe('profilesApi', () => {
 
   describe('update', () => {
     it('should call apiRequest with the correct parameters', async () => {
-      // Setup
       const updateData = { firstName: 'Updated', createdCategories: true };
       const updatedProfile = { ...mockProfile, firstName: 'Updated' };
       vi.mocked(apiClient.apiRequest).mockResolvedValueOnce(updatedProfile);
 
-      // Execute
       const result = await profilesApi.update(mockSession, 'user-id', updateData);
 
-      // Verify
       expect(apiClient.apiRequest).toHaveBeenCalledWith(
         '/api/profiles/user-id',
         mockSession,
         {
           method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(updateData),
         }
       );

@@ -148,7 +148,7 @@ export const Navbar = () => {
                 <Button variant="ghost" className="ml-4 flex items-center gap-2">
                   <UserCircle className="h-5 w-5" />
                   <span className="max-w-[100px] truncate">
-                    {profile?.full_name || user.email}
+                    {profile?.fullName || user.email}
                   </span>
                 </Button>
               </DropdownMenuTrigger>

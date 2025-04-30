@@ -19,6 +19,7 @@ export const incidentsApi = {
   update: (session: Session, id: string, data: Partial<Incident>) =>
     apiRequest<Incident>(`/api/incidents/${id}`, session, {
       method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
     }),
 
