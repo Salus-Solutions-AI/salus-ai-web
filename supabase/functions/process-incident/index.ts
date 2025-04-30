@@ -86,57 +86,8 @@ serve(async (req) => {
     }
     
     const organization = profileData?.organization || null
-    
-    // Download the document from Supabase storage
-    const { data, error: downloadError } = await supabaseAdmin
-      .storage
-      .from('incidents')
-      .download(record.file_path)
-
-    if (downloadError) {
-      return new Response(
-        JSON.stringify({ error: `Error downloading file: ${downloadError.message}` }), 
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
-      )
-    }
-
-    if (!data) {
-      return new Response(
-        JSON.stringify({ error: 'No file data received' }), 
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 404 }
-      )
-    }
-
-    // Convert file to array buffer and then to Uint8Array
-    const fileBuffer = await data.arrayBuffer()
-    const documentBytes = new Uint8Array(fileBuffer)
-    
-    // Configure S3 and upload the document
-    const s3Config: S3Config = {
-      region: AWS_REGION,
-      accessKeyId: AWS_ACCESS_KEY_ID,
-      secretAccessKey: AWS_SECRET_ACCESS_KEY,
-      bucket: 'salus-textract'
-    }
-    
-    // Upload to S3
-    const s3Key = `textract-processing/${record.id}.pdf`
-    await uploadToS3(s3Config, s3Key, documentBytes)
-    
-    const { ocrStatusUploadError } = await updateIncidentStatus(supabaseAdmin, record.id, "Processing (OCR)")
-    if (ocrStatusUploadError) {
-      console.error('Error updating incident status:', ocrStatusUploadError)
-      return new Response(
-        JSON.stringify({ error: ocrStatusUploadError.message }),
-        { 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 500 
-        }
-      )
-    }
-
     const incidentPopulator = IncidentPopulatorFactory.createIncidentPopulator(organization, aiApiKey, AI_SERVICE)
-
+    
     // Analyze PDF using AWS Textract
     const textractConfig: TextractConfig = {
       region: AWS_REGION,
@@ -144,9 +95,10 @@ serve(async (req) => {
       secretAccessKey: AWS_SECRET_ACCESS_KEY
     }
 
+    const { bucketName, key } = parseS3Url(record.pdfUrl)
     const s3Object = {
-      bucket: s3Config.bucket,
-      key: s3Key,
+      bucket: bucketName,
+      key: key
     }
     
     const result = await incidentPopulator.runOCR(textractConfig, s3Object)
@@ -226,4 +178,37 @@ async function updateIncidentStatus(supabaseAdmin: any, incidentId: string, stat
     .update({ status: status })
     .eq('id', incidentId)
     .select()
+}
+
+function parseS3Url(url: string): { bucketName: string, key: string } {
+  // Regular expression to match S3 URLs
+  // Capturing groups: 
+  // 1. Protocol (http or https)
+  // 2. Bucket name
+  // 3. Key (everything after the bucket in the path)
+  const regex = /^(https?):\/\/([^.]+)\.s3\.(?:[^/]+)\.amazonaws\.com\/(.+)$/;
+  
+  // Alternative format: https://s3.region.amazonaws.com/bucket/key
+  const altRegex = /^(https?):\/\/s3\.(?:[^/]+)\.amazonaws\.com\/([^/]+)\/(.+)$/;
+  
+  let match = url.match(regex);
+  
+  if (match) {
+    return {
+      bucketName: match[2],
+      key: match[3]
+    };
+  }
+  
+  // Try the alternative format
+  match = url.match(altRegex);
+  
+  if (match) {
+    return {
+      bucketName: match[2],
+      key: match[3]
+    };
+  }
+  
+  throw Error(`unable to parse S3 URL: ${url}`)
 }

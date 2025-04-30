@@ -6,9 +6,6 @@ export const getStatusColor = (status: string) => {
   switch (status) {
     case IncidentProcessingStatus.QUEUED:
       return 'bg-blue-100 text-blue-800';
-    case IncidentProcessingStatus.PROCESSING_UPLOAD:
-      return 'bg-orange-100 text-orange-800';
-    case IncidentProcessingStatus.PROCESSING_UPLOAD:
     case IncidentProcessingStatus.PROCESSING_OCR:
     case IncidentProcessingStatus.PROCESSING_CLASSIFICATION:
       return 'bg-orange-100 text-orange-800';
@@ -24,7 +21,6 @@ export const getStatusColor = (status: string) => {
 export const getStatusIcon = (status: string) => {
   switch (status) {
     case IncidentProcessingStatus.QUEUED:
-    case IncidentProcessingStatus.PROCESSING_UPLOAD:
     case IncidentProcessingStatus.PROCESSING_OCR:
     case IncidentProcessingStatus.PROCESSING_CLASSIFICATION:
       return <div className="animate-spin mr-2 h-4 w-4 border-2 border-current border-t-transparent rounded-full" />;
@@ -40,7 +36,6 @@ export const getStatusIcon = (status: string) => {
 export const getAttributeIcon = (status: string) => {
   switch (status) {
     case IncidentProcessingStatus.QUEUED:
-    case IncidentProcessingStatus.PROCESSING_UPLOAD:
     case IncidentProcessingStatus.PROCESSING_OCR:
     case IncidentProcessingStatus.PROCESSING_CLASSIFICATION:
       return <div className="animate-spin mr-2 h-4 w-4 border-2 border-current border-t-transparent rounded-full" />;
