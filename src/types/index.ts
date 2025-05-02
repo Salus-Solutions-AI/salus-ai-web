@@ -17,6 +17,7 @@ export interface Incident {
   status: IncidentProcessingStatus;
   number: string;
   pdfUrl: string;
+  preSignedUrl: string;
   filePath: string;
   uploadedAt: string;
   uploadedBy: string;
@@ -28,7 +29,6 @@ export interface Incident {
 
 export enum IncidentProcessingStatus {
   QUEUED = "Queued for processing",
-  PROCESSING_UPLOAD = "Processing (Upload)",
   PROCESSING_OCR = "Processing (OCR)",
   PROCESSING_CLASSIFICATION = "Processing (Classification)",
   PENDING = "Pending review",

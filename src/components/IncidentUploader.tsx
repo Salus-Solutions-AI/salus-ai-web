@@ -5,10 +5,8 @@ import { Button } from "@/components/ui/button";
 import { cn } from '@/lib/utils';
 import { toast } from '@/components/ui/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
-import { v4 as uuidv4 } from 'uuid';
-import { IncidentProcessingStatus } from '@/types';
 import { Label } from '@/components/ui/label';
+import { incidentsApi } from '@/api/resources/incidents';
 
 const IncidentUploader = ({ onUploadSuccess }) => {
   const [files, setFiles] = useState<File[]>([]);
@@ -16,7 +14,7 @@ const IncidentUploader = ({ onUploadSuccess }) => {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<{[key: string]: number}>({});
   
-  const { user } = useAuth();
+  const { session, user } = useAuth();
 
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
@@ -73,40 +71,11 @@ const IncidentUploader = ({ onUploadSuccess }) => {
   };
 
   const uploadIncident = async (file: File) => {
-    // Create a unique filename
-    const fileName = `${uuidv4()}.${file.name.split('.').pop()}`;
-    const filePath = `${user.id}/${fileName}`;
-    
-    // Upload file to Supabase Storage
-    const { error: uploadError, data: uploadData } = await supabase.storage
-      .from('incidents')
-      .upload(filePath, file);
-    
-    if (uploadError) throw uploadError;
+    const formData = new FormData();
+    formData.append('file', file);
 
-    // Get the public URL
-    const { data: urlData } = supabase.storage
-      .from('incidents')
-      .getPublicUrl(filePath);
-      
-    const pdfUrl = urlData.publicUrl;
-    
-    // Insert incident record into database
-    const { error: insertError, data: incidentData } = await supabase
-      .from('incidents')
-      .insert({
-        title: file.name,
-        status: IncidentProcessingStatus.QUEUED,
-        pdf_url: pdfUrl,
-        file_path: filePath,
-        uploaded_by: user.id,
-      })
-      .select()
-      .single();
-    
-    if (insertError) throw insertError;
-    
-    return incidentData;
+    const incident = await incidentsApi.create(session, formData);
+    console.log(incident);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {

@@ -84,7 +84,7 @@ const Categories = () => {
 
   useEffect(() => {
     fetchCategories();
-  }, [user]);
+  }, [user?.id]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -208,7 +208,7 @@ const Categories = () => {
         <Card>
           <CardContent>
             {isLoading ? (
-              <div className="py-8 flex justify-center">
+              <div className="py-8 flex justify-center" role="status">
                 <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
               </div>
             ) : categories.length === 0 ? (

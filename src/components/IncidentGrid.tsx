@@ -19,7 +19,6 @@ import { toast } from '@/components/ui/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { getAttributeIcon, getStatusColor, getStatusIcon } from '@/utils/statusUtils';
 import { formatDate } from '@/utils/dateUtils';
-import { downloadIncident } from '@/integrations/supabase/storageUtils';
 import { incidentsApi } from '@/api/resources/incidents';
 
 interface IncidentGridProps {
@@ -109,9 +108,9 @@ const IncidentGrid = ({ refresh, refreshQueuedOnly, queuedIncidents, setQueuedIn
     }
   }, [refreshQueuedOnly]);
 
-  const handleViewIncident = (pdfUrl: string) => {
-    if (pdfUrl) {
-      window.open(pdfUrl, '_blank');
+  const handleViewIncident = (url: string) => {
+    if (url) {
+      window.open(url, '_blank');
     } else {
       toast({
         title: "No PDF available",
@@ -123,15 +122,26 @@ const IncidentGrid = ({ refresh, refreshQueuedOnly, queuedIncidents, setQueuedIn
 
   const handleDownloadIncident = async (incident: Incident) => {
     try {
-      const { data, error } = await downloadIncident(incident)
-      if (error) throw error;
+      if (!incident.preSignedUrl) {
+        throw new Error("No pre-signed URL available for this incident");
+      }
       
-      const url = URL.createObjectURL(data);
+      const response = await fetch(incident.preSignedUrl);
+      
+      if (!response.ok) {
+        throw new Error(`Failed to download: ${response.status} ${response.statusText}`);
+      }
+      
+      const fileBlob = await response.blob();
+      
+      const url = URL.createObjectURL(fileBlob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = incident.title;
+      
+      a.download = `${incident.title}.pdf`
       document.body.appendChild(a);
       a.click();
+      
       URL.revokeObjectURL(url);
       document.body.removeChild(a);
       
@@ -141,9 +151,10 @@ const IncidentGrid = ({ refresh, refreshQueuedOnly, queuedIncidents, setQueuedIn
         variant: "success",
       });
     } catch (error) {
+      console.error("Download error:", error);
       toast({
         title: "Download Failed",
-        description: "There was an error downloading the file. Please try again later.",
+        description: error instanceof Error ? error.message : "There was an error downloading the file. Please try again later.",
         variant: "destructive",
       });
     }
@@ -332,7 +343,7 @@ const IncidentGrid = ({ refresh, refreshQueuedOnly, queuedIncidents, setQueuedIn
                         size="sm"
                         onClick={(e) => {
                           e.stopPropagation();
-                          handleViewIncident(incident.pdfUrl);
+                          handleViewIncident(incident.preSignedUrl);
                         }}
                       >
                         <Eye className="h-4 w-4" />

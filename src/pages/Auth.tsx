@@ -111,7 +111,7 @@ const Auth = () => {
                         Signing in...
                       </div>
                     ) : (
-                      <div className="flex items-center">
+                      <div className="flex items-center" role="sign-in">
                         Sign In
                         <ArrowRightIcon className="ml-2 h-4 w-4" />
                       </div>
@@ -202,7 +202,7 @@ const Auth = () => {
                         Creating Account...
                       </div>
                     ) : (
-                      <div className="flex items-center">
+                      <div className="flex items-center" role="sign-up">
                         Create Account
                         <ArrowRightIcon className="ml-2 h-4 w-4" />
                       </div>

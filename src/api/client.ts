@@ -5,10 +5,13 @@ import { Session } from '@supabase/supabase-js';
 export async function apiRequest<T>(
   endpoint: string, 
   session: Session,
-  options: RequestInit = {}
+  options: RequestInit = {
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  }
 ): Promise<T> {
   const headers = {
-    'Content-Type': 'application/json',
     'Authorization': `Bearer ${session.access_token}`,
     ...options.headers,
   };

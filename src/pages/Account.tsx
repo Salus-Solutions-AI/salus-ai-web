@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -17,7 +16,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from '@/components/ui/use-toast';
 import Navbar from '@/components/Navbar';
 import { profilesApi } from '@/api/resources/profiles';
 
@@ -37,8 +36,7 @@ const passwordSchema = z.object({
 });
 
 const Account = () => {
-  const { session, profile, user } = useAuth();
-  const { toast } = useToast();
+  const { session, profile, user, refetchProfile } = useAuth();
   const [loading, setLoading] = useState(false);
   const [passwordLoading, setPasswordLoading] = useState(false);
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
@@ -67,19 +65,18 @@ const Account = () => {
   useEffect(() => {
     if (user && profile) {
       profileForm.reset({
-        name: profile.full_name || '',
+        name: profile.fullName || '',
         email: user.email || '',
         organization: profile.organization || '',
       });
     }
-  }, [user, profile, profileForm]);
+  }, [user?.id, profile, profileForm]);
 
   const onProfileSubmit = async (data) => {
     if (!user) return;
     
     setLoading(true);
     try {
-      // Update email if changed
       if (data.email !== user.email) {
         const { error: emailError } = await supabase.auth.updateUser({ 
           email: data.email 
@@ -97,7 +94,10 @@ const Account = () => {
       await profilesApi.update(session, user.id, {
         fullName: data.name,
         organization: data.organization,
+        createdCategories: profile.createdCategories,
       });
+
+      await refetchProfile();
 
       toast({
         title: "Profile updated",
@@ -123,7 +123,6 @@ const Account = () => {
     setPasswordError('');
     
     try {
-      // First verify the current password
       const { error: signInError } = await supabase.auth.signInWithPassword({
         email: user.email,
         password: data.currentPassword
@@ -134,7 +133,6 @@ const Account = () => {
         throw new Error('Current password is incorrect');
       }
       
-      // If current password is correct, update to new password
       const { error } = await supabase.auth.updateUser({ 
         password: data.newPassword 
       });

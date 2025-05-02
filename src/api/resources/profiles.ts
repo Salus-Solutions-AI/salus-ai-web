@@ -9,6 +9,7 @@ export const profilesApi = {
   update: (session: Session, id: string, data: Partial<Profile>) => 
     apiRequest<Profile>(`/api/profiles/${id}`, session, {
       method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
     }),
 }; 

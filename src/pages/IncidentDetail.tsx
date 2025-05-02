@@ -24,7 +24,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { Incident, IncidentProcessingStatus } from '@/types';
 import { formatDate } from '@/utils/dateUtils';
 import { getStatusColor, getStatusIcon } from '@/utils/statusUtils';
-import { downloadIncident } from '@/integrations/supabase/storageUtils';
 import { cn } from "@/lib/utils";
 import {
   Dialog,
@@ -188,15 +187,26 @@ const IncidentDetail = () => {
     setDownloadingFile(true);
 
     try {
-      const { data, error } = await downloadIncident(incident)
-      if (error) throw error;
+      if (!incident.preSignedUrl) {
+        throw new Error("No pre-signed URL available for this incident.");
+      }
       
-      const url = URL.createObjectURL(data);
+      const response = await fetch(incident.preSignedUrl);
+      
+      if (!response.ok) {
+        throw new Error(`Failed to download: ${response.status} ${response.statusText}`);
+      }
+      
+      const fileBlob = await response.blob();
+      
+      const url = URL.createObjectURL(fileBlob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = incident.title;
+      
+      a.download = `${incident.title}.pdf`
       document.body.appendChild(a);
       a.click();
+      
       URL.revokeObjectURL(url);
       document.body.removeChild(a);
       
@@ -206,9 +216,10 @@ const IncidentDetail = () => {
         variant: "success",
       });
     } catch (error) {
+      console.error("Download error:", error);
       toast({
         title: "Download Failed",
-        description: "There was an error downloading the file. Please try again later.",
+        description: error instanceof Error ? error.message : "There was an error downloading the file. Please try again later.",
         variant: "destructive",
       });
     } finally {
@@ -447,7 +458,7 @@ Campus Safety Team`;
                 e.stopPropagation();
                 handleDownload();
               }}
-              disabled={downloadingFile || !incident?.filePath}
+              disabled={downloadingFile || !incident?.preSignedUrl}
             >
               {downloadingFile ? (
                 <>

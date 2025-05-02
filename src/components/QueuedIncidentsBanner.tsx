@@ -23,8 +23,6 @@ const QueuedIncidentsBanner = ({ queuedIncidents, onRefresh, isLoading }: Queued
   const calculateProgress = (status: string): number => {
     switch (status) {
       case IncidentProcessingStatus.QUEUED:
-        return 10;
-      case IncidentProcessingStatus.PROCESSING_UPLOAD:
         return 25;
       case IncidentProcessingStatus.PROCESSING_OCR:
         return 50;

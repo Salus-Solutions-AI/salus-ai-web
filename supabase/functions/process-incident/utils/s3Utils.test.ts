@@ -1,87 +1,94 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { uploadToS3, S3Config } from './s3Utils';
-import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
+import { parseS3Url } from './s3Utils';
 
-// Mock the AWS SDK modules
-vi.mock('@aws-sdk/client-s3', () => {
-  const mockSend = vi.fn().mockResolvedValue({ success: true });
-  
-  return {
-    S3Client: vi.fn(() => ({
-      send: mockSend
-    })),
-    PutObjectCommand: vi.fn()
-  };
-});
-
-describe('S3 Utilities', () => {
-  // Create test data
-  const config: S3Config = {
-    region: 'us-east-1',
-    accessKeyId: 'test-access-key',
-    secretAccessKey: 'test-secret-key',
-    bucket: 'test-bucket'
-  };
-  
-  const document = new Uint8Array([1, 2, 3, 4, 5]);
-  const key = 'test/document.pdf';
-  
+describe('parseS3Url', () => {
   beforeEach(() => {
-    // Reset mocks before each test
-    vi.resetAllMocks();
+    // Spy on console.error to test error logging
+    vi.spyOn(console, 'error').mockImplementation(() => {});
   });
-  
-  it('should successfully upload a document to S3', async () => {
-    // Call the function being tested
-    const result = await uploadToS3(config, key, document);
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('should correctly parse standard S3 URLs', () => {
+    const url = 'https://my-bucket.s3.amazonaws.com/incidents/d32cd64b-f9be-4ced-a8a6-93e0136da169/71611a9b-4415-4796-80f6-41ebcd52db94.pdf';
+    const result = parseS3Url(url);
     
-    // Assert that the function returns the key
-    expect(result).toBe(key);
-    
-    // Verify S3Client was created with correct config
-    expect(S3Client).toHaveBeenCalledWith({
-      region: config.region,
-      credentials: {
-        accessKeyId: config.accessKeyId,
-        secretAccessKey: config.secretAccessKey
-      }
+    expect(result).toEqual({
+      bucketName: 'my-bucket',
+      key: 'incidents/d32cd64b-f9be-4ced-a8a6-93e0136da169/71611a9b-4415-4796-80f6-41ebcd52db94.pdf'
     });
+  });
+
+  it('should correctly parse S3 URLs with region in domain', () => {
+    const url = 'https://my-bucket.s3.us-west-2.amazonaws.com/path/to/my-file.json';
+    const result = parseS3Url(url);
     
-    // Verify PutObjectCommand was created with correct params
-    expect(PutObjectCommand).toHaveBeenCalledWith({
-      Bucket: config.bucket,
-      Key: key,
-      Body: document,
-      ContentType: 'application/pdf'
+    expect(result).toEqual({
+      bucketName: 'my-bucket',
+      key: 'path/to/my-file.json'
     });
-    
-    // Verify send was called
-    const s3ClientInstance = vi.mocked(S3Client).mock.results[0].value;
-    expect(s3ClientInstance.send).toHaveBeenCalled();
   });
-  
-  it('should throw an error when S3 upload fails', async () => {
-    // Mock the send method to reject with an error
-    const errorMessage = 'S3 upload failed';
+
+  it('should correctly parse path-style S3 URLs', () => {
+    const url = 'https://s3.amazonaws.com/bucket-name/folder/file.txt';
+    const result = parseS3Url(url);
     
-    // Reset the S3Client mock to return a client with a failing send method
-    vi.mocked(S3Client).mockImplementationOnce(() => ({
-      send: vi.fn().mockRejectedValueOnce(new Error(errorMessage))
-    }));
-    
-    // Assert that the function rejects with the expected error
-    await expect(uploadToS3(config, key, document)).rejects.toThrow(errorMessage);
+    expect(result).toEqual({
+      bucketName: 'bucket-name',
+      key: 'folder/file.txt'
+    });
   });
-  
-  it('should pass the correct content type for PDF documents', async () => {
-    // Call the function
-    await uploadToS3(config, key, document);
+
+  it('should correctly parse path-style S3 URLs with region', () => {
+    const url = 'https://s3.us-east-1.amazonaws.com/my-east-bucket/some/path/doc.pdf';
+    const result = parseS3Url(url);
     
-    // Verify content type was set correctly
-    expect(PutObjectCommand).toHaveBeenCalledWith(
-      expect.objectContaining({
-        ContentType: 'application/pdf'
-      })
+    expect(result).toEqual({
+      bucketName: 'my-east-bucket',
+      key: 'some/path/doc.pdf'
+    });
+  });
+
+  it('should correctly parse virtual hosted-style URLs', () => {
+    const url = 'https://bucket-with-dash.s3-eu-central-1.amazonaws.com/object.jpg';
+    const result = parseS3Url(url);
+    
+    expect(result).toEqual({
+      bucketName: 'bucket-with-dash',
+      key: 'object.jpg'
+    });
+  });
+
+  it('should support HTTP protocol', () => {
+    const url = 'http://test-bucket.s3.amazonaws.com/file.zip';
+    const result = parseS3Url(url);
+    
+    expect(result).toEqual({
+      bucketName: 'test-bucket',
+      key: 'file.zip'
+    });
+  });
+
+  it('should return null for non-S3 URLs', () => {
+    const url = 'https://example.com/not-an-s3-url';
+    const result = parseS3Url(url);
+    
+    expect(result).toBeNull();
+    expect(console.error).toHaveBeenCalledWith(
+      'URL does not match known S3 URL patterns:',
+      url
+    );
+  });
+
+  it('should handle empty string input', () => {
+    const result = parseS3Url('');
+    
+    expect(result).toBeNull();
+    expect(console.error).toHaveBeenCalledWith(
+      'Invalid URL provided:',
+      ''
     );
   });
 });

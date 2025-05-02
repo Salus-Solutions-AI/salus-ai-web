@@ -12,12 +12,14 @@ export const categoriesApi = {
   create: (session: Session, data: Partial<Category>): Promise<Category> =>
     apiRequest('/api/categories', session, {
       method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
     }),
 
   update: (session: Session, id: string, data: Partial<Category>): Promise<Category> =>
     apiRequest(`/api/categories/${id}`, session, {
       method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
     }),
 

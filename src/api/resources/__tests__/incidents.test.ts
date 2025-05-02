@@ -3,7 +3,6 @@ import { incidentsApi } from '../incidents';
 import * as apiClient from '../../client';
 import { IncidentProcessingStatus } from '@/types';
 
-// Mock the apiRequest function
 vi.mock('../../client', () => ({
   apiRequest: vi.fn(),
 }));
@@ -98,6 +97,9 @@ describe('incidentsApi', () => {
 
   describe('create', () => {
     it('should call apiRequest with the correct parameters', async () => {
+      const formData = new FormData();
+      formData.append('file', new File(['test'], 'test.pdf', { type: 'application/pdf' }));
+
       const newIncident = {
         title: 'New Incident',
         date: '2023-01-03T12:00:00Z',
@@ -108,14 +110,15 @@ describe('incidentsApi', () => {
       const createdIncident = { id: '3', ...newIncident, status: IncidentProcessingStatus.PENDING };
       vi.mocked(apiClient.apiRequest).mockResolvedValueOnce(createdIncident);
 
-      const result = await incidentsApi.create(mockSession, newIncident);
+      const result = await incidentsApi.create(mockSession, formData);
 
       expect(apiClient.apiRequest).toHaveBeenCalledWith(
         '/api/incidents',
         mockSession,
         {
           method: 'POST',
-          body: JSON.stringify(newIncident),
+          body: formData,
+          headers: {},
         }
       );
       expect(result).toEqual(createdIncident);
@@ -135,6 +138,7 @@ describe('incidentsApi', () => {
         mockSession,
         {
           method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(updateData),
         }
       );

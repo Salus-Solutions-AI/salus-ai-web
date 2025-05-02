@@ -1,7 +1,7 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'npm:@supabase/supabase-js'
-import { uploadToS3, type S3Config } from './utils/s3Utils.ts'
 import { type TextractConfig } from './utils/textractUtils.ts'
+import { parseS3Url } from './utils/s3Utils.ts'
 import { IncidentPopulatorFactory } from './templates/IncidentPopulatorFactory.ts'
 
 const corsHeaders = {
@@ -62,7 +62,7 @@ serve(async (req) => {
       )
     }
 
-    const { uploadStatusUpdateError } = await updateIncidentStatus(supabaseAdmin, record.id, "Processing (Upload)")
+    const { uploadStatusUpdateError } = await updateIncidentStatus(supabaseAdmin, record.id, "Processing (OCR)")
     if (uploadStatusUpdateError) {
       console.error('Error updating incident status:', uploadStatusUpdateError)
       return new Response(
@@ -86,57 +86,8 @@ serve(async (req) => {
     }
     
     const organization = profileData?.organization || null
-    
-    // Download the document from Supabase storage
-    const { data, error: downloadError } = await supabaseAdmin
-      .storage
-      .from('incidents')
-      .download(record.file_path)
-
-    if (downloadError) {
-      return new Response(
-        JSON.stringify({ error: `Error downloading file: ${downloadError.message}` }), 
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
-      )
-    }
-
-    if (!data) {
-      return new Response(
-        JSON.stringify({ error: 'No file data received' }), 
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 404 }
-      )
-    }
-
-    // Convert file to array buffer and then to Uint8Array
-    const fileBuffer = await data.arrayBuffer()
-    const documentBytes = new Uint8Array(fileBuffer)
-    
-    // Configure S3 and upload the document
-    const s3Config: S3Config = {
-      region: AWS_REGION,
-      accessKeyId: AWS_ACCESS_KEY_ID,
-      secretAccessKey: AWS_SECRET_ACCESS_KEY,
-      bucket: 'salus-textract'
-    }
-    
-    // Upload to S3
-    const s3Key = `textract-processing/${record.id}.pdf`
-    await uploadToS3(s3Config, s3Key, documentBytes)
-    
-    const { ocrStatusUploadError } = await updateIncidentStatus(supabaseAdmin, record.id, "Processing (OCR)")
-    if (ocrStatusUploadError) {
-      console.error('Error updating incident status:', ocrStatusUploadError)
-      return new Response(
-        JSON.stringify({ error: ocrStatusUploadError.message }),
-        { 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 500 
-        }
-      )
-    }
-
     const incidentPopulator = IncidentPopulatorFactory.createIncidentPopulator(organization, aiApiKey, AI_SERVICE)
-
+    
     // Analyze PDF using AWS Textract
     const textractConfig: TextractConfig = {
       region: AWS_REGION,
@@ -144,9 +95,21 @@ serve(async (req) => {
       secretAccessKey: AWS_SECRET_ACCESS_KEY
     }
 
+    const s3Config = parseS3Url(record.pdf_url)
+    if (!s3Config) {
+      console.error('Unable to parse S3 URL:', record.pdf_url)
+      return new Response(
+        JSON.stringify({ error: `Unable to parse S3 URL ${record.pdf_url}`}),
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 500 
+        }
+      )
+    }
+
     const s3Object = {
-      bucket: s3Config.bucket,
-      key: s3Key,
+      bucket: s3Config?.bucketName,
+      key: s3Config?.key,
     }
     
     const result = await incidentPopulator.runOCR(textractConfig, s3Object)
