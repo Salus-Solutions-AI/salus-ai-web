@@ -2,7 +2,7 @@ import { BroadCategoryAgent } from './BroadCategoryAgent.ts';
 import { DetailedClassificationAgent } from './DetailedClassificationAgent.ts';
 import { LocationAnalysisAgent } from './LocationAnalysisAgent.ts';
 import { TimelyWarningAgent, TimelyWarningResult } from './TimelyWarningAgent.ts';
-import { AgentConfig, AgentContext, DetailedClassification, LocationAnalysis } from './types.ts';
+import { AgentConfig, AgentContext, DetailedClassification, LocationAnalysis } from './sharedTypes.ts'
 
 export class ClassificationOrchestrator {
     private config: AgentConfig;
@@ -69,4 +69,4 @@ export class ClassificationOrchestrator {
             throw error;
         }
     }
-} 
+}

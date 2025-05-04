@@ -69,4 +69,4 @@ export interface LegacyClassificationResult {
     time: string;
     number: string;
     summary: string;
-} 
+}

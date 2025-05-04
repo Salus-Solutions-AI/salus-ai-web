@@ -1,4 +1,4 @@
-import { AgentConfig, AgentContext, AgentResponse } from './types.ts';
+import { AgentConfig, AgentContext, AgentResponse } from './sharedTypes.ts';
 
 export abstract class BaseAgent<T> {
     protected config: AgentConfig;
@@ -34,4 +34,4 @@ export abstract class BaseAgent<T> {
             throw error;
         }
     }
-} 
+}

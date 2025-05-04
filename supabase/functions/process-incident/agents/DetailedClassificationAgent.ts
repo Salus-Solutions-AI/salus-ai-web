@@ -1,5 +1,5 @@
 import { BaseAgent } from './BaseAgent.ts';
-import { DetailedClassification, AgentConfig, AgentContext, InitialClassification } from './types.ts';
+import { DetailedClassification, AgentConfig, AgentContext, InitialClassification } from './sharedTypes.ts';
 import { queryOpenAI } from '../utils/openAiUtils.ts';
 import { queryAnthropic } from '../utils/anthropicUtils.ts';
 
@@ -87,4 +87,4 @@ export class DetailedClassificationAgent extends BaseAgent<DetailedClassificatio
             return await queryAnthropic(anthropicKey, prompt);
         }
     }
-} 
+}

@@ -1,5 +1,5 @@
 import { BaseAgent } from './BaseAgent.ts';
-import { LocationAnalysis, AgentConfig, AgentContext } from './types.ts';
+import { LocationAnalysis, AgentConfig, AgentContext } from './sharedTypes.ts';
 import { queryOpenAI } from '../utils/openAiUtils.ts';
 import { queryAnthropic } from '../utils/anthropicUtils.ts';
 
@@ -67,4 +67,4 @@ export class LocationAnalysisAgent extends BaseAgent<LocationAnalysis> {
             return await queryAnthropic(anthropicKey, prompt);
         }
     }
-} 
+}

@@ -1,5 +1,5 @@
 import { BaseAgent } from './BaseAgent.ts';
-import { InitialClassification, AgentConfig, AgentContext } from './types.ts';
+import { InitialClassification, AgentConfig, AgentContext } from './sharedTypes.ts';
 import { queryOpenAI } from '../utils/openAiUtils.ts';
 import { queryAnthropic } from '../utils/anthropicUtils.ts';
 
@@ -85,4 +85,4 @@ export class BroadCategoryAgent extends BaseAgent<InitialClassification> {
             return await queryAnthropic(anthropicKey, prompt);
         }
     }
-} 
+}

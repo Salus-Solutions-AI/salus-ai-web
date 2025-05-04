@@ -1,5 +1,4 @@
 import { BaseAgent } from './BaseAgent.ts';
-import { AgentConfig, AgentContext, AgentResponse } from './types.ts';
 import { queryOpenAI } from '../utils/openAiUtils.ts';
 import { queryAnthropic } from '../utils/anthropicUtils.ts';
 
@@ -82,4 +81,4 @@ export class TimelyWarningAgent extends BaseAgent<TimelyWarningResult> {
             return await queryAnthropic(anthropicKey, prompt);
         }
     }
-} 
+}
