@@ -104,7 +104,7 @@ export class DefaultIncidentPopulator implements IncidentPopulator {
 
     return {
       ...incident,
-      status: "Pending review",
+      status: "Pending Review",
       category: classificationResponse.category,
       date: parseDate(classificationResponse.date),
       time_str: classificationResponse.time,

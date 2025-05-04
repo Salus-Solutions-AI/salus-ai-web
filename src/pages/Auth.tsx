@@ -21,7 +21,7 @@ const Auth = () => {
 
   // Redirect if already authenticated
   if (user && !isLoading) {
-    navigate('/');
+    navigate('/summary');
     return null;
   }
 

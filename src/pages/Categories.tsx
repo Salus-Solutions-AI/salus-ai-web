@@ -47,6 +47,7 @@ const Categories = () => {
       setIsLoading(true);
 
       const profile = await profilesApi.getById(session, user.id);
+      console.log(profile);
 
       if (!profile.createdCategories) {
         // copy default categories to user's profile
