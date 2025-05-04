@@ -97,7 +97,7 @@ const IncidentStats = () => {
     incidents.forEach(incident => {
       if (incident.status !== IncidentProcessingStatus.COMPLETED) return;
       if (!incident.category) return;
-      if (incident.category.toLowerCase() === "none") return;
+      if (incident.category.toLowerCase().includes("none")) return;
       
       categoryCount[incident.category] = (categoryCount[incident.category] || 0) + 1;
     });
