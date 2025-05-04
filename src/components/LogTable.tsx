@@ -10,7 +10,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Incident } from '@/types';
+import { Incident, IncidentProcessingStatus } from '@/types';
 import { toast } from '@/components/ui/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { createLogExcel, downloadFile } from '@/utils/exportUtils';
@@ -33,7 +33,7 @@ const LogTable = () => {
         const incidents = await incidentsApi.getAll(session);
 
         const startOfDay = new Date(new Date().setHours(0, 0, 0, 0)).toISOString();
-        const todayIncidents = incidents.filter(incident => incident.uploadedAt >= startOfDay);
+        const todayIncidents = incidents.filter(incident => incident.uploadedAt >= startOfDay && incident.status === IncidentProcessingStatus.COMPLETED);
 
         setIncidents(todayIncidents);
       }
@@ -225,7 +225,7 @@ const LogTable = () => {
               <div className="w-16 h-16 rounded-full bg-secondary mx-auto flex items-center justify-center mb-4">
                 <Search className="h-8 w-8 text-muted-foreground" />
               </div>
-              <h3 className="text-lg font-medium mb-1">No Incidents Found</h3>
+              <h3 className="text-lg font-medium mb-1">No Completed Incidents Found</h3>
               <p className="text-muted-foreground">
                 {incidents.length === 0 
                   ? "No incidents reported today. Try uploading an incident first."

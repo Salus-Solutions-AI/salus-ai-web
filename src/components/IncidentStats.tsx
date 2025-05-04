@@ -60,7 +60,6 @@ const IncidentStats = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [categoryData, setCategoryData] = useState<{ name: string; count: number }[]>([]);
   const [statusData, setStatusData] = useState<{ name: string; count: number }[]>([]);
-  const [cleryData, setCleryData] = useState<{ name: string; value: number }[]>([]);
   const [categoryColors, setCategoryColors] = useState<string[]>([]);
   const [statusColors, setStatusColors] = useState<string[]>([]);
   const { user, session } = useAuth();
@@ -96,9 +95,11 @@ const IncidentStats = () => {
     // Process category data
     const categoryCount: Record<string, number> = {};
     incidents.forEach(incident => {
-      if (incident.category && !incident.category.toLowerCase().includes("none")) {
-        categoryCount[incident.category] = (categoryCount[incident.category] || 0) + 1;
-      }
+      if (incident.status !== IncidentProcessingStatus.COMPLETED) return;
+      if (!incident.category) return;
+      if (incident.category.toLowerCase() === "none") return;
+      
+      categoryCount[incident.category] = (categoryCount[incident.category] || 0) + 1;
     });
 
     const categoryDataArray = Object.entries(categoryCount)
@@ -111,9 +112,8 @@ const IncidentStats = () => {
     // Process status data
     const statusCount: Record<string, number> = {};
     incidents.forEach(incident => {
-      if (incident.status) {
-        statusCount[incident.status] = (statusCount[incident.status] || 0) + 1;
-      }
+      if (!incident.status) return;
+      statusCount[incident.status] = (statusCount[incident.status] || 0) + 1;
     });
 
     const statusDataArray = Object.entries(statusCount)
@@ -122,17 +122,6 @@ const IncidentStats = () => {
 
     setStatusData(statusDataArray);
     setStatusColors(generateColorPalette(statusDataArray.length));
-
-    // Process Clery data
-    const cleryCount = incidents.filter(incident => incident.isClery).length;
-    const nonCleryCount = incidents.length - cleryCount;
-    const timelyWarningCount = incidents.filter(incident => incident.requiresTimelyWarning).length;
-
-    setCleryData([
-      { name: 'Clery Incidents', value: cleryCount },
-      { name: 'Non-Clery Incidents', value: nonCleryCount },
-      { name: 'Timely-Warning Incidents', value: timelyWarningCount }
-    ]);
   };
 
   const renderCustomTooltip = ({ active, payload }: any) => {
@@ -270,7 +259,7 @@ const IncidentStats = () => {
                       dataKey="count" 
                       radius={[4, 4, 0, 0]}
                     >
-                      {categoryData.map((entry, index) => (
+                      {statusData.map((entry, index) => (
                         <Cell 
                           key={`cell-${index}`} 
                           fill={statusColors[index % statusColors.length]} 
