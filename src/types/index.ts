@@ -28,10 +28,10 @@ export interface Incident {
 }
 
 export enum IncidentProcessingStatus {
-  QUEUED = "Queued for processing",
+  QUEUED = "Queued",
   PROCESSING_OCR = "Processing (OCR)",
   PROCESSING_CLASSIFICATION = "Processing (Classification)",
-  PENDING = "Pending review",
+  PENDING = "Pending Review",
   COMPLETED = "Completed",
 }
 

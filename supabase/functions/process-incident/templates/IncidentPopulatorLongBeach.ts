@@ -29,7 +29,7 @@ export class LongBeachIncidentPopulator implements IncidentPopulator {
     
     return {
       ...incident,
-      status: "Pending review",
+      status: "Pending Review",
       category: mockData.category,
       date: mockData.date,
       date_str: mockData.dateStr,

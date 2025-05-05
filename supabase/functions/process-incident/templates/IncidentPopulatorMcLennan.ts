@@ -84,7 +84,7 @@ export class McLennanIncidentPopulator implements IncidentPopulator {
 
     return {
       ...incident,
-      status: "Pending review",
+      status: "Pending Review",
       category: classificationResponse.category,
       date: parseDate(textractFormData["Date of incident:"]),
       time_str: textractFormData["Time of incident:"],

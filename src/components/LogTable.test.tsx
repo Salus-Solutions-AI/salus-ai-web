@@ -28,9 +28,10 @@ const mockIncidents: Incident[] = [
     location: 'Campus Library',
     explanation: 'Test explanation',
     summary: 'Test summary',
-    status: IncidentProcessingStatus.PENDING,
+    status: IncidentProcessingStatus.COMPLETED,
     number: 'INC-001',
     pdfUrl: 'https://example.com/test.pdf',
+    preSignedUrl: 'https://example.com/presigned-url',
     filePath: '/test/path.pdf',
     uploadedAt: new Date().toISOString(),
     uploadedBy: 'user-id',
@@ -63,7 +64,7 @@ describe('LogTable', () => {
     render(<LogTable />);
 
     await waitFor(() => {
-      expect(screen.getByText('No Incidents Found')).toBeInTheDocument();
+      expect(screen.getByText('No Completed Incidents Found')).toBeInTheDocument();
     });
   });
 
@@ -86,7 +87,7 @@ describe('LogTable', () => {
     await user.type(searchInput, 'nonexistent');
 
     await waitFor(() => {
-      expect(screen.getByText('No Incidents Found')).toBeInTheDocument();
+      expect(screen.getByText('No Completed Incidents Found')).toBeInTheDocument();
     });
   });
 });

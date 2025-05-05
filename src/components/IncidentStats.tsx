@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Incident } from '@/types';
+import { Incident, IncidentProcessingStatus } from '@/types';
 import { 
   BarChart, 
   Bar, 
@@ -11,10 +11,7 @@ import {
   CartesianGrid, 
   Tooltip, 
   ResponsiveContainer,
-  PieChart,
-  Pie,
   Cell,
-  Legend
 } from 'recharts';
 import { toast } from '@/components/ui/use-toast';
 import { incidentsApi } from '@/api/resources/incidents';
@@ -62,8 +59,9 @@ const IncidentStats = () => {
   const [incidents, setIncidents] = useState<Incident[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [categoryData, setCategoryData] = useState<{ name: string; count: number }[]>([]);
-  const [cleryData, setCleryData] = useState<{ name: string; value: number }[]>([]);
+  const [statusData, setStatusData] = useState<{ name: string; count: number }[]>([]);
   const [categoryColors, setCategoryColors] = useState<string[]>([]);
+  const [statusColors, setStatusColors] = useState<string[]>([]);
   const { user, session } = useAuth();
 
   useEffect(() => {
@@ -97,8 +95,11 @@ const IncidentStats = () => {
     // Process category data
     const categoryCount: Record<string, number> = {};
     incidents.forEach(incident => {
-      const category = incident.category || 'Uncategorized';
-      categoryCount[category] = (categoryCount[category] || 0) + 1;
+      if (incident.status !== IncidentProcessingStatus.COMPLETED) return;
+      if (!incident.category) return;
+      if (incident.category.toLowerCase().includes("none")) return;
+      
+      categoryCount[incident.category] = (categoryCount[incident.category] || 0) + 1;
     });
 
     const categoryDataArray = Object.entries(categoryCount)
@@ -106,18 +107,21 @@ const IncidentStats = () => {
       .sort((a, b) => b.count - a.count);
 
     setCategoryData(categoryDataArray);
-    
-    // Generate colors for categories dynamically
     setCategoryColors(generateColorPalette(categoryDataArray.length));
 
-    // Process Clery data
-    const cleryCount = incidents.filter(incident => incident.isClery).length;
-    const nonCleryCount = incidents.length - cleryCount;
+    // Process status data
+    const statusCount: Record<string, number> = {};
+    incidents.forEach(incident => {
+      if (!incident.status) return;
+      statusCount[incident.status] = (statusCount[incident.status] || 0) + 1;
+    });
 
-    setCleryData([
-      { name: 'Clery Incidents', value: cleryCount },
-      { name: 'Non-Clery Incidents', value: nonCleryCount }
-    ]);
+    const statusDataArray = Object.entries(statusCount)
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => b.count - a.count);
+
+    setStatusData(statusDataArray);
+    setStatusColors(generateColorPalette(statusDataArray.length));
   };
 
   const renderCustomTooltip = ({ active, payload }: any) => {
@@ -136,27 +140,38 @@ const IncidentStats = () => {
 
   return (
     <div className="grid grid-cols-1 gap-6 mt-6">
-      {/* Moved the statistics card to the top */}
       <Card className="bg-card shadow-sm animate-appear">
         <CardHeader>
           <CardTitle>Incident Statistics</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
             <div className="bg-secondary/30 rounded-lg p-6 text-center">
-              <h3 className="text-lg font-medium mb-2">Total Incidents</h3>
-              <p className="text-4xl font-bold text-primary">{incidents.length}</p>
+              <h3 className="text-lg font-medium mb-2">Total</h3>
+              <p className="text-4xl font-bold">{incidents.length}</p>
             </div>
             <div className="bg-secondary/30 rounded-lg p-6 text-center">
-              <h3 className="text-lg font-medium mb-2">Clery Incidents</h3>
-              <p className="text-4xl font-bold text-[#8B5CF6]">
-                {incidents.filter(incident => incident.isClery).length}
+              <h3 className="text-lg font-medium mb-2">Pending</h3>
+              <p className="text-4xl font-bold">
+                {incidents.filter(incident => incident.status !== IncidentProcessingStatus.COMPLETED).length}
               </p>
             </div>
             <div className="bg-secondary/30 rounded-lg p-6 text-center">
-              <h3 className="text-lg font-medium mb-2">Non-Clery Incidents</h3>
+              <h3 className="text-lg font-medium mb-2">Clery</h3>
+              <p className="text-4xl font-bold">
+                {incidents.filter(incident => incident.status === IncidentProcessingStatus.COMPLETED && incident.isClery).length}
+              </p>
+            </div>
+            <div className="bg-secondary/30 rounded-lg p-6 text-center">
+              <h3 className="text-lg font-medium mb-2">Non-Clery</h3>
               <p className="text-4xl font-bold text-foreground">
-                {incidents.filter(incident => !incident.isClery).length}
+                {incidents.filter(incident => incident.status === IncidentProcessingStatus.COMPLETED && !incident.isClery).length}
+              </p>
+            </div>
+            <div className="bg-secondary/30 rounded-lg p-6 text-center">
+              <h3 className="text-lg font-medium mb-2">Timely-Warning</h3>
+              <p className="text-4xl font-bold text-foreground">
+                {incidents.filter(incident => incident.status === IncidentProcessingStatus.COMPLETED && incident.requiresTimelyWarning).length}
               </p>
             </div>
           </div>
@@ -166,7 +181,7 @@ const IncidentStats = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card className="bg-card shadow-sm animate-appear">
           <CardHeader>
-            <CardTitle>Incidents by Category</CardTitle>
+            <CardTitle>Clery Incidents by Category</CardTitle>
           </CardHeader>
           <CardContent>
             {isLoading ? (
@@ -215,7 +230,7 @@ const IncidentStats = () => {
 
         <Card className="bg-card shadow-sm animate-appear">
           <CardHeader>
-            <CardTitle>Clery vs. Non-Clery Incidents</CardTitle>
+            <CardTitle>Incidents by Status</CardTitle>
           </CardHeader>
           <CardContent>
             {isLoading ? (
@@ -225,35 +240,33 @@ const IncidentStats = () => {
             ) : incidents.length > 0 ? (
               <div className="h-80">
                 <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={cleryData}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={60}
-                      outerRadius={100}
-                      fill="#8B5CF6"
-                      paddingAngle={2}
-                      dataKey="value"
-                      label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
-                      labelLine={false}
+                  <BarChart
+                    data={statusData}
+                    margin={{ top: 20, right: 30, left: 20, bottom: 70 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+                    <XAxis 
+                      dataKey="name" 
+                      angle={-45} 
+                      textAnchor="end" 
+                      height={70} 
+                      interval={0}
+                      tick={{ fontSize: 12, fill: 'var(--foreground)' }}
+                    />
+                    <YAxis tick={{ fill: 'var(--foreground)' }} />
+                    <Tooltip content={renderCustomTooltip} />
+                    <Bar 
+                      dataKey="count" 
+                      radius={[4, 4, 0, 0]}
                     >
-                      {cleryData.map((entry, index) => (
+                      {statusData.map((entry, index) => (
                         <Cell 
                           key={`cell-${index}`} 
-                          fill={CLERY_COLORS[index % CLERY_COLORS.length]} 
-                          className="stroke-background" 
-                          strokeWidth={2}
+                          fill={statusColors[index % statusColors.length]} 
                         />
                       ))}
-                    </Pie>
-                    <Tooltip content={renderCustomTooltip} />
-                    <Legend 
-                      formatter={(value, entry, index) => (
-                        <span className="text-foreground">{value}</span>
-                      )}
-                    />
-                  </PieChart>
+                    </Bar>
+                  </BarChart>
                 </ResponsiveContainer>
               </div>
             ) : (
