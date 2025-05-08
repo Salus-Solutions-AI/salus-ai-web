@@ -50,7 +50,6 @@ const Index = () => {
           
           <div className="bg-white rounded-xl p-8 shadow-sm animate-slide card-hover grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="md:col-span-1 flex flex-col justify-center">
-              <span className="font-bold text-primary text-xl">📋</span>
               <h3 className="text-xl font-semibold mb-4">Automated Incident Classification</h3>
               <p className="text-muted-foreground">Classifies reports in seconds with explanations and full audit trails.</p>
             </div>
@@ -71,17 +70,14 @@ const Index = () => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {[
               {
-              icon: "⏱️", // Stopwatch icon for real-time updates
                 title: "Real-Time Clery Log Updates",
                 description: "Automatically updates Clery logs, ensuring accuracy and compliance."
                 },
                 {
-                icon: "✔️", // Checkmark icon for institution-specific learning
                 title: "Institution-Specific Learning",
                 description: "Adopts the unique policies of each university, refining based on feedback."
                 },
                 {
-                icon: "👥", // Two-person icon for human-centric review
                 title: "Human-Centric Review System",
                 description: "Compliance officers retain final decision-making authority."
                 }
@@ -91,7 +87,6 @@ const Index = () => {
               className="bg-white rounded-xl p-8 shadow-sm animate-slide card-hover"
               style={{ animationDelay: `${index * 100}ms` }}
               >
-                <span className="font-bold text-primary text-xl">{feature.icon}</span>
               <h3 className="text-xl font-semibold mb-4">{feature.title}</h3>
               <p className="text-muted-foreground">{feature.description}</p>
               </div>

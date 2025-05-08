@@ -110,15 +110,12 @@ const IncidentUploader = ({ onUploadSuccess }) => {
     const failedFiles: string[] = [];
     
     try {
-      // Upload files in parallel with individual progress tracking
       await Promise.all(files.map(async (file, index) => {
         try {
-          // Update progress for this file
           setUploadProgress(prev => ({ ...prev, [index]: 10 }));
           
           await uploadIncident(file);
           
-          // Update progress when complete
           setUploadProgress(prev => ({ ...prev, [index]: 100 }));
           successCount++;
         } catch (error) {
