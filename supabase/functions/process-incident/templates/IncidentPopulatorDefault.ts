@@ -83,7 +83,8 @@ export class DefaultIncidentPopulator implements IncidentPopulator {
     const classificationResponse = parseClassificationResponse(classificationLLMResponse);
 
     let requiresTimelyWarning = false;
-    if (classificationResponse.isClery) {
+    let needsMoreInfo = classificationResponse.needsMoreInfo || classificationResponse.category === "Needs more info" || classificationResponse.category === "Unknown";
+    if (classificationResponse.isClery && !needsMoreInfo) {
       // wait one second
       await new Promise(resolve => setTimeout(resolve, 1000));
 

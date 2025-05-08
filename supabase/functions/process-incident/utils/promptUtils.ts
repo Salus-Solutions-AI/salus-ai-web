@@ -96,6 +96,7 @@ export function constructTimelyWarningPrompt(incidentText: string): string {
 
             One example of an incident that should not be classified as requiring a timely warning is if a student may have been sexually assaulted by someone at a party in the past,
             or if there was an altercation on campus the day before, but there is no evidence that the threat is ongoing.
+            Please keep in mind that Timely Warnings are not common for Clery Act incidents, and therefore you should be very confident in your decision before classifying an incident as requiring a timely warning.
 
         Incident text:
         ${incidentText}
