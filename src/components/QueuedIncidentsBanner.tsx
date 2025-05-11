@@ -1,12 +1,14 @@
-
-import { RefreshCw } from 'lucide-react';
+import { RefreshCw, X } from 'lucide-react';
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Incident, IncidentProcessingStatus } from '@/types';
 import { cn } from '@/lib/utils';
-import { useState, useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
+import { incidentsApi } from '@/api/resources/incidents';
+import { useAuth } from '@/contexts/AuthContext';
+import { toast } from '@/components/ui/use-toast';
 
 interface QueuedIncidentsBannerProps {
   queuedIncidents: Incident[];
@@ -15,11 +17,11 @@ interface QueuedIncidentsBannerProps {
 }
 
 const QueuedIncidentsBanner = ({ queuedIncidents, onRefresh, isLoading }: QueuedIncidentsBannerProps) => {
-  // Prevent too frequent refreshes with a ref
+  const { session } = useAuth();
+
   const refreshTimerRef = useRef<NodeJS.Timeout | null>(null);
   const lastRefreshTimeRef = useRef<number>(Date.now());
   
-  // Calculate the progress based on the incident status
   const calculateProgress = (status: string): number => {
     switch (status) {
       case IncidentProcessingStatus.QUEUED:
@@ -33,13 +35,11 @@ const QueuedIncidentsBanner = ({ queuedIncidents, onRefresh, isLoading }: Queued
     }
   };
   
-  // Auto-refresh incidents every second but prevent UI flashing
   useEffect(() => {
     if (queuedIncidents.length === 0) return;
     
     const refreshWithThrottle = () => {
       const now = Date.now();
-      // Only refresh if it's been at least 2 seconds since last refresh
       if (now - lastRefreshTimeRef.current >= 2000) {
         onRefresh();
         lastRefreshTimeRef.current = now;
@@ -58,6 +58,28 @@ const QueuedIncidentsBanner = ({ queuedIncidents, onRefresh, isLoading }: Queued
   if (queuedIncidents.length === 0) {
     return null;
   }
+
+  const handleDelete = async (incident: Incident, e: React.MouseEvent) => {
+    e.stopPropagation();
+    
+    try {
+      await incidentsApi.delete(session, incident.id);
+      toast({
+        title: "Incident deleted",
+        description: "The incident has been deleted.",
+        variant: "success",
+      });
+    } catch (error) {
+      console.error('Error deleting incident:', error);
+      toast({
+        title: "Error deleting incident",
+        description: "Could not delete the incident. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      onRefresh();
+    }
+  };
 
   return (
     <Alert variant="default" className="mb-6 shadow-md border-blue-200 bg-blue-50/50 dark:border-blue-900 dark:bg-blue-950/20">
@@ -109,6 +131,19 @@ const QueuedIncidentsBanner = ({ queuedIncidents, onRefresh, isLoading }: Queued
                       value={calculateProgress(incident.status)} 
                       className="h-1.5 w-full bg-blue-100 dark:bg-blue-800/30"
                     />
+                  </div>
+                  <div className="mt-2 ml-2">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-5 w-5 rounded-full hover:bg-primary-foreground/30"
+                      onClick={(e) => handleDelete(incident, e)}
+                      disabled={false}
+                      title="Remove from queue"
+                    >
+                      <X className="h-4 w-4" />
+                      <span className="sr-only">Remove</span>
+                    </Button>
                   </div>
                 </div>
               </CardContent>
