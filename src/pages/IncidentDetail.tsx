@@ -34,6 +34,7 @@ import {
 } from "@/components/ui/dialog";
 import { incidentsApi } from '@/api/resources/incidents';
 import { useAuth } from '@/contexts/AuthContext';
+import RelatedIncidents from '@/components/RelatedIncidents';
 
 const IncidentDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -477,7 +478,7 @@ Campus Safety Team`;
         
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <Card className={cn(
-            "lg:col-span-2",
+            "lg:col-span-2 flex flex-col",
             incident?.isClery ? "border-2 border-[#8B5CF6] bg-[#FEF7CD]/20" : "",
             incident?.needsMoreInfo ? "border-l-4 border-amber-500 bg-[#FFEBEB]/40" : "",
             incident?.requiresTimelyWarning ? "border-l-4 border-red-500 bg-red-50/40" : ""
@@ -500,7 +501,7 @@ Campus Safety Team`;
               </div>
             </CardHeader>
             
-            <CardContent className="space-y-6">
+            <CardContent className="space-y-6 flex-1">
               {incident?.requiresTimelyWarning && (
                 <div className="bg-red-50 p-4 rounded-md border border-red-200 mb-4">
                   <div className="flex items-center gap-2 text-red-800 font-medium mb-2">
@@ -643,73 +644,77 @@ Campus Safety Team`;
             </CardContent>
           </Card>
           
-          <Card>
-            <CardHeader>
-              <CardTitle>Metadata</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-8">
-              <div>
-                <p className="text-sm font-medium">Status</p>
-                <div className="flex items-center mt-1">
-                  {incident && getStatusIcon(incident.status)}
-                  <Badge variant="outline" className={incident ? getStatusColor(incident.status) : ''}>
-                    {incident?.status}
-                  </Badge>
-                </div>
-              </div>
-
-              {incident?.needsMoreInfo && (
+          <div className="lg:col-span-1 flex flex-col gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Metadata</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-8">
                 <div>
-                  <p className="text-sm font-medium">Additional Information Required</p>
+                  <p className="text-sm font-medium">Status</p>
                   <div className="flex items-center mt-1">
-                    <Badge variant="outline" className="bg-amber-100 text-amber-800 border-amber-200">
-                      <AlertTriangle className="mr-2 h-4 w-4" />
-                      Needs More Info
+                    {incident && getStatusIcon(incident.status)}
+                    <Badge variant="outline" className={incident ? getStatusColor(incident.status) : ''}>
+                      {incident?.status}
                     </Badge>
                   </div>
                 </div>
-              )}
 
-              {incident?.isClery && (
-                <div>
-                  <p className="text-sm font-medium">Classification</p>
-                  <div className="flex items-center mt-1">
-                    <Badge variant="outline" className="bg-[#8B5CF6]/10 text-[#8B5CF6] border-[#8B5CF6]/20">
-                      <Flag className="mr-2 h-4 w-4" />
-                      Clery Act Incident
-                    </Badge>
+                {incident?.needsMoreInfo && (
+                  <div>
+                    <p className="text-sm font-medium">Additional Information Required</p>
+                    <div className="flex items-center mt-1">
+                      <Badge variant="outline" className="bg-amber-100 text-amber-800 border-amber-200">
+                        <AlertTriangle className="mr-2 h-4 w-4" />
+                        Needs More Info
+                      </Badge>
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
 
-              {incident?.requiresTimelyWarning && (
-                <div>
-                  <p className="text-sm font-medium">Timely Warning Required</p>
-                  <div className="flex items-center mt-1">
-                    <Badge variant="outline" className="bg-red-100 text-red-800 border-red-200">
-                      <Shield className="mr-2 h-4 w-4" />
-                      Timely Warning
-                    </Badge>
+                {incident?.isClery && (
+                  <div>
+                    <p className="text-sm font-medium">Classification</p>
+                    <div className="flex items-center mt-1">
+                      <Badge variant="outline" className="bg-[#8B5CF6]/10 text-[#8B5CF6] border-[#8B5CF6]/20">
+                        <Flag className="mr-2 h-4 w-4" />
+                        Clery Act Incident
+                      </Badge>
+                    </div>
                   </div>
+                )}
+
+                {incident?.requiresTimelyWarning && (
+                  <div>
+                    <p className="text-sm font-medium">Timely Warning Required</p>
+                    <div className="flex items-center mt-1">
+                      <Badge variant="outline" className="bg-red-100 text-red-800 border-red-200">
+                        <Shield className="mr-2 h-4 w-4" />
+                        Timely Warning
+                      </Badge>
+                    </div>
+                  </div>
+                )}
+
+                <div>
+                  <p className="text-sm font-medium">File</p>
+                  <p className="text-gray-600">{incident?.title}</p>
                 </div>
-              )}
 
-              <div>
-                <p className="text-sm font-medium">File</p>
-                <p className="text-gray-600">{incident?.title}</p>
-              </div>
-
-              <div>
-                <p className="text-sm font-medium">Uploaded By</p>
-                <p className="text-gray-600">{incident?.uploaderName}</p>
-              </div>
-              
-              <div>
-                <p className="text-sm font-medium">Uploaded At</p>
-                <p className="text-gray-600">{incident?.uploadedAt ? formatDate(incident.uploadedAt) : ''}</p>
-              </div>
-            </CardContent>
-          </Card>
+                <div>
+                  <p className="text-sm font-medium">Uploaded By</p>
+                  <p className="text-gray-600">{incident?.uploaderName}</p>
+                </div>
+                
+                <div>
+                  <p className="text-sm font-medium">Uploaded At</p>
+                  <p className="text-gray-600">{incident?.uploadedAt ? formatDate(incident.uploadedAt) : ''}</p>
+                </div>
+              </CardContent>
+            </Card>
+            
+            {incident && <RelatedIncidents incidentId={incident.id} />}
+          </div>
         </div>
       </div>
 

@@ -27,4 +27,7 @@ export const incidentsApi = {
     apiRequest<Incident>(`/api/incidents/${id}`, session, {
       method: 'DELETE',
     }),
+
+  getDuplicates: (session: Session, id: string): Promise<Incident[]> =>
+    apiRequest(`/api/incidents/${id}/duplicates`, session),
 }; 
