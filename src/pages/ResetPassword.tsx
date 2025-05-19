@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { Navbar } from '@/components/Navbar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,25 +16,79 @@ const ResetPassword = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [searchParams] = useSearchParams();
+  const location = useLocation();
   const navigate = useNavigate();
-
-  // Check if we have the required parameters
+  const [isValidToken, setIsValidToken] = useState(false);
+  
   useEffect(() => {
-    const type = searchParams.get('type');
-    const accessToken = searchParams.get('access_token');
+    const setSession = async () => {
+      // First check the regular query params (for completeness)
+      const queryType = searchParams.get('type');
+      const queryAccessToken = searchParams.get('access_token');
+      
+      // Then check the URL hash fragment - this is where Supabase puts the tokens
+      const hashParams = new URLSearchParams(location.hash.substring(1));
+      const hashType = hashParams.get('type');
+      const hashAccessToken = hashParams.get('access_token');
+      const hashRefreshToken = hashParams.get('refresh_token');
+      
+      // Check if we have valid tokens either in query params or hash fragment
+      if ((queryType === 'recovery' && queryAccessToken) || 
+          (hashType === 'recovery' && hashAccessToken)) {
+        
+        // If tokens are in the hash, set the session
+        if (hashAccessToken && hashRefreshToken) {
+          const { data, error } = await supabase.auth.setSession({
+            access_token: hashAccessToken,
+            refresh_token: hashRefreshToken
+          });
+          
+          if (error) {
+            console.error("Error setting session:", error);
+            showInvalidLinkError();
+            return;
+          }
+          
+          // Check if we got a valid session
+          if (data.session) {
+            setIsValidToken(true);
+            return;
+          }
+        } else if (queryAccessToken) {
+          // If tokens are in query params (less likely with Supabase)
+          setIsValidToken(true);
+          return;
+        }
+      }
+      
+      // If we get here, we don't have a valid token
+      showInvalidLinkError();
+    };
     
-    if (type !== 'recovery' || !accessToken) {
+    const showInvalidLinkError = () => {
       toast({
         title: "Invalid reset link",
         description: "This password reset link is invalid or has expired.",
         variant: "destructive",
       });
       navigate('/login');
-    }
-  }, [searchParams, navigate]);
+    };
+    
+    setSession();
+  }, [location, searchParams, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!isValidToken) {
+      toast({
+        title: "Invalid session",
+        description: "Your reset link has expired. Please request a new password reset.",
+        variant: "destructive",
+      });
+      navigate('/login');
+      return;
+    }
     
     if (password !== confirmPassword) {
       toast({
@@ -176,4 +230,4 @@ const ResetPassword = () => {
   );
 };
 
-export default ResetPassword; 
+export default ResetPassword;
