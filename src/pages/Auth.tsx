@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Navbar } from '@/components/Navbar';
 import { Button } from '@/components/ui/button';
@@ -9,17 +8,18 @@ import { useNavigate } from 'react-router-dom';
 import { LockIcon, MailIcon, UserIcon, BuildingIcon, ArrowRightIcon } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { toast } from '@/components/ui/use-toast';
 
 const Auth = () => {
-  const { signIn, signUp, user, isLoading } = useAuth();
+  const { signIn, signUp, user, isLoading, resetPassword } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [organization, setOrganization] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isResettingPassword, setIsResettingPassword] = useState(false);
   const navigate = useNavigate();
 
-  // Redirect if already authenticated
   if (user && !isLoading) {
     navigate('/summary');
     return null;
@@ -50,6 +50,26 @@ const Auth = () => {
       console.error('Sign up error:', error);
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleResetPassword = async () => {
+    if (!email) {
+      toast({
+        title: "Email required",
+        description: "Please enter your email address to reset your password.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsResettingPassword(true);
+    try {
+      await resetPassword(email);
+    } catch (error) {
+      console.error('Password reset error:', error);
+    } finally {
+      setIsResettingPassword(false);
     }
   };
 
@@ -102,6 +122,25 @@ const Auth = () => {
                         required
                       />
                     </div>
+                  </div>
+                  
+                  <div className="flex justify-end">
+                    <Button
+                      type="button"
+                      variant="link"
+                      className="px-0 font-normal"
+                      onClick={handleResetPassword}
+                      disabled={isResettingPassword}
+                    >
+                      {isResettingPassword ? (
+                        <div className="flex items-center">
+                          <div className="animate-spin mr-2 h-4 w-4 border-2 border-current border-t-transparent rounded-full" />
+                          Sending reset email...
+                        </div>
+                      ) : (
+                        "Forgot your password?"
+                      )}
+                    </Button>
                   </div>
                   
                   <Button type="submit" className="w-full" disabled={isSubmitting}>

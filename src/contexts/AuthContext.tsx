@@ -14,6 +14,7 @@ type AuthContextType = {
   signUp: (email: string, password: string, name: string, organization: string) => Promise<void>;
   signOut: () => Promise<void>;
   refetchProfile: () => Promise<void>;
+  resetPassword: (email: string) => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -46,7 +47,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const setupSession = async () => {
       setIsLoading(true);
       try {
-        // Get current session
         const { data: { session } } = await supabase.auth.getSession();
         setSession(session);
         setUser(session?.user || null);
@@ -63,7 +63,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     setupSession();
 
-    // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         setSession(session);
@@ -148,7 +147,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
       
-      // Clear state after successful sign out
       setSession(null);
       setUser(null);
       setProfile(null);
@@ -168,6 +166,29 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
+  const resetPassword = async (email: string) => {
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+      
+      if (error) throw error;
+      
+      toast({
+        title: "Password reset email sent",
+        description: "Please check your email for the password reset link.",
+        variant: "success",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Failed to send reset email",
+        description: error.message || "An error occurred while sending the reset email.",
+        variant: "destructive",
+      });
+      throw error;
+    }
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -179,6 +200,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         signUp,
         signOut,
         refetchProfile,
+        resetPassword,
       }}
     >
       {children}
