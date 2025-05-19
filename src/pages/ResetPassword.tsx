@@ -16,46 +16,41 @@ const ResetPassword = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [recoveryToken, setRecoveryToken] = useState<string | null>(null);
+  const [validToken, setValidToken] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
 
   useEffect(() => {
-    const verifyRecoveryToken = async () => {
+    const validateToken = async () => {
       setIsLoading(true);
       
       try {
-        const fullUrl = window.location.href;
-        console.log(fullUrl);
-
-        // Check for hash parameters
+        // Extract token data from the URL hash
         const hashParams = new URLSearchParams(location.hash.substring(1));
-        const type = hashParams.get('type');
         const accessToken = hashParams.get('access_token');
+        const refreshToken = hashParams.get('refresh_token');
+        const type = hashParams.get('type');
         
-        // Validate we have a recovery-type hash with an access token
-        if (type !== 'recovery' || !accessToken) {
+        // Validate we have the required parameters
+        if (!accessToken || !refreshToken || type !== 'recovery') {
           throw new Error('Invalid reset link parameters');
         }
         
-        // Store the token for later verification during password update
-        setRecoveryToken(accessToken);
-        
-        // Check if we can get a valid session with this token
-        // This validates the token without fully logging the user in
-        const refreshToken = hashParams.get('refresh_token') || '';
-        const { error } = await supabase.auth.setSession({
+        // Validate the token by trying to set a session
+        const { data, error } = await supabase.auth.setSession({
           access_token: accessToken,
           refresh_token: refreshToken
         });
         
-        if (error) {
-          throw new Error('Invalid or expired reset token');
+        if (error || !data.session) {
+          throw new Error('Invalid or expired token');
         }
         
+        // We have a valid recovery token
+        setValidToken(true);
         setIsLoading(false);
       } catch (error) {
-        console.error('Token verification error:', error);
+        console.error('Token validation error:', error);
         toast({
           title: 'Invalid reset link',
           description: 'This password reset link is invalid or has expired. Please request a new one.',
@@ -65,22 +60,17 @@ const ResetPassword = () => {
       }
     };
 
-    verifyRecoveryToken();
-    
-    // Clean up function to sign out when component unmounts
-    return () => {
-      supabase.auth.signOut();
-    };
+    validateToken();
   }, [location, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Additional validation to ensure we have a recovery token
-    if (!recoveryToken) {
+    // Make sure we have a valid token
+    if (!validToken) {
       toast({
         title: 'Invalid session',
-        description: 'Unable to reset your password. Please request a new reset link.',
+        description: 'Your password reset session is invalid. Please request a new reset link.',
         variant: 'destructive',
       });
       navigate('/login');
@@ -237,8 +227,23 @@ const ResetPassword = () => {
           </CardContent>
         </Card>
       </div>
+      
+      {/* Add a cleanup effect when component unmounts */}
+      <UseEffectCleanup />
     </div>
   );
+};
+
+// Component to handle cleanup when navigating away
+const UseEffectCleanup = () => {
+  useEffect(() => {
+    // Return a cleanup function that will run when component unmounts
+    return () => {
+      supabase.auth.signOut().catch(console.error);
+    };
+  }, []);
+  
+  return null;
 };
 
 export default ResetPassword;
