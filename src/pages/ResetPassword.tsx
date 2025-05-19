@@ -25,6 +25,9 @@ const ResetPassword = () => {
       setIsLoading(true);
       
       try {
+        const fullUrl = window.location.href;
+        console.log(fullUrl);
+
         // Check for hash parameters
         const hashParams = new URLSearchParams(location.hash.substring(1));
         const type = hashParams.get('type');
