@@ -16,55 +16,48 @@ const ResetPassword = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [resetData, setResetData] = useState<{
+    access_token: string;
+    refresh_token: string;
+  } | null>(null);
   const location = useLocation();
   const navigate = useNavigate();
 
   useEffect(() => {
-    const processResetRequest = async () => {
+    const processResetTokens = async () => {
       setIsLoading(true);
-
+      
       try {
-        const { data: { session } } = await supabase.auth.getSession();
-        
         const hashParams = new URLSearchParams(location.hash.substring(1));
-        const hashType = hashParams.get('type');
+        const type = hashParams.get('type');
+        const accessToken = hashParams.get('access_token');
+        const refreshToken = hashParams.get('refresh_token');
         
-        if (session && hashType === 'recovery') {
+        if (type === 'recovery' && accessToken && refreshToken) {
+          await supabase.auth.signOut();
+          
+          setResetData({
+            access_token: accessToken,
+            refresh_token: refreshToken
+          });
+          
           setIsLoading(false);
           return;
         }
         
-        if (session && !hashType) {
-          navigate('/summary');
-          return;
-        }
-        
-        if (hashType === 'recovery') {
-          const accessToken = hashParams.get('access_token');
-          const refreshToken = hashParams.get('refresh_token');
-          
-          if (accessToken && refreshToken) {
-            localStorage.setItem('recovery_access_token', accessToken);
-            localStorage.setItem('recovery_refresh_token', refreshToken);
-            setIsLoading(false);
-            return;
-          }
-        }
-        
-        throw new Error("Invalid or expired reset link");
-        
+        throw new Error('Invalid reset link');
       } catch (error) {
-        console.error("Error processing reset request:", error);
+        console.error('Error processing reset tokens:', error);
         toast({
-          title: "Invalid reset link",
-          description: "This password reset link is invalid or has expired. Please request a new one.",
-          variant: "destructive",
+          title: 'Invalid reset link',
+          description: 'This password reset link is invalid or has expired. Please request a new one.',
+          variant: 'destructive',
         });
         navigate('/login');
       }
     };
 
-    processResetRequest();
+    processResetTokens();
   }, [location, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -88,42 +81,39 @@ const ResetPassword = () => {
       return;
     }
 
+    if (!resetData) {
+      toast({
+        title: "Invalid reset session",
+        description: "Unable to reset password. Please request a new reset link.",
+        variant: "destructive",
+      });
+      navigate('/login');
+      return;
+    }
+
     setIsSubmitting(true);
+    
     try {
-      let result = await supabase.auth.updateUser({ password });
+      const { error: sessionError } = await supabase.auth.setSession(resetData);
       
-      if (result.error) {
-        const accessToken = localStorage.getItem('recovery_access_token');
-        const refreshToken = localStorage.getItem('recovery_refresh_token');
-        
-        if (accessToken && refreshToken) {
-          const sessionResult = await supabase.auth.setSession({
-            access_token: accessToken,
-            refresh_token: refreshToken
-          });
-          
-          if (sessionResult.error) throw sessionResult.error;
-          
-          result = await supabase.auth.updateUser({ password });
-          
-          if (result.error) throw result.error;
-          
-          await supabase.auth.signOut();
-        } else {
-          throw new Error("Recovery tokens not found");
-        }
+      if (sessionError) {
+        throw new Error('Your password reset link has expired. Please request a new one.');
       }
-
-      localStorage.removeItem('recovery_access_token');
-      localStorage.removeItem('recovery_refresh_token');
-
+      
+      const { error: updateError } = await supabase.auth.updateUser({
+        password: password
+      });
+      
+      if (updateError) throw updateError;
+      
+      await supabase.auth.signOut();
+      
       toast({
         title: "Password updated",
         description: "Your password has been successfully reset. You can now sign in with your new password.",
         variant: "success",
       });
-
-      await supabase.auth.signOut();
+      
       navigate('/login');
       
     } catch (error: any) {
@@ -132,6 +122,7 @@ const ResetPassword = () => {
         description: error.message || "An error occurred while resetting your password.",
         variant: "destructive",
       });
+      navigate('/login');
     } finally {
       setIsSubmitting(false);
     }
