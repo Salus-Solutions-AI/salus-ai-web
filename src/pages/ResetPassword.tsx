@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Navbar } from '@/components/Navbar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,80 +15,60 @@ const ResetPassword = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [searchParams] = useSearchParams();
+  const [isLoading, setIsLoading] = useState(true);
   const location = useLocation();
   const navigate = useNavigate();
-  const [isValidToken, setIsValidToken] = useState(false);
-  
+
   useEffect(() => {
-    const setSession = async () => {
-      // First check the regular query params (for completeness)
-      const queryType = searchParams.get('type');
-      const queryAccessToken = searchParams.get('access_token');
-      
-      // Then check the URL hash fragment - this is where Supabase puts the tokens
-      const hashParams = new URLSearchParams(location.hash.substring(1));
-      const hashType = hashParams.get('type');
-      const hashAccessToken = hashParams.get('access_token');
-      const hashRefreshToken = hashParams.get('refresh_token');
-      
-      // Check if we have valid tokens either in query params or hash fragment
-      if ((queryType === 'recovery' && queryAccessToken) || 
-          (hashType === 'recovery' && hashAccessToken)) {
+    const processResetRequest = async () => {
+      setIsLoading(true);
+
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
         
-        // If tokens are in the hash, set the session
-        if (hashAccessToken && hashRefreshToken) {
-          const { data, error } = await supabase.auth.setSession({
-            access_token: hashAccessToken,
-            refresh_token: hashRefreshToken
-          });
-          
-          if (error) {
-            console.error("Error setting session:", error);
-            showInvalidLinkError();
-            return;
-          }
-          
-          // Check if we got a valid session
-          if (data.session) {
-            setIsValidToken(true);
-            return;
-          }
-        } else if (queryAccessToken) {
-          // If tokens are in query params (less likely with Supabase)
-          setIsValidToken(true);
+        const hashParams = new URLSearchParams(location.hash.substring(1));
+        const hashType = hashParams.get('type');
+        
+        if (session && hashType === 'recovery') {
+          setIsLoading(false);
           return;
         }
+        
+        if (session && !hashType) {
+          navigate('/summary');
+          return;
+        }
+        
+        if (hashType === 'recovery') {
+          const accessToken = hashParams.get('access_token');
+          const refreshToken = hashParams.get('refresh_token');
+          
+          if (accessToken && refreshToken) {
+            localStorage.setItem('recovery_access_token', accessToken);
+            localStorage.setItem('recovery_refresh_token', refreshToken);
+            setIsLoading(false);
+            return;
+          }
+        }
+        
+        throw new Error("Invalid or expired reset link");
+        
+      } catch (error) {
+        console.error("Error processing reset request:", error);
+        toast({
+          title: "Invalid reset link",
+          description: "This password reset link is invalid or has expired. Please request a new one.",
+          variant: "destructive",
+        });
+        navigate('/login');
       }
-      
-      // If we get here, we don't have a valid token
-      showInvalidLinkError();
     };
-    
-    const showInvalidLinkError = () => {
-      toast({
-        title: "Invalid reset link",
-        description: "This password reset link is invalid or has expired.",
-        variant: "destructive",
-      });
-      navigate('/login');
-    };
-    
-    setSession();
-  }, [location, searchParams, navigate]);
+
+    processResetRequest();
+  }, [location, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!isValidToken) {
-      toast({
-        title: "Invalid session",
-        description: "Your reset link has expired. Please request a new password reset.",
-        variant: "destructive",
-      });
-      navigate('/login');
-      return;
-    }
     
     if (password !== confirmPassword) {
       toast({
@@ -110,11 +90,32 @@ const ResetPassword = () => {
 
     setIsSubmitting(true);
     try {
-      const { error } = await supabase.auth.updateUser({
-        password: password
-      });
+      let result = await supabase.auth.updateUser({ password });
+      
+      if (result.error) {
+        const accessToken = localStorage.getItem('recovery_access_token');
+        const refreshToken = localStorage.getItem('recovery_refresh_token');
+        
+        if (accessToken && refreshToken) {
+          const sessionResult = await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken
+          });
+          
+          if (sessionResult.error) throw sessionResult.error;
+          
+          result = await supabase.auth.updateUser({ password });
+          
+          if (result.error) throw result.error;
+          
+          await supabase.auth.signOut();
+        } else {
+          throw new Error("Recovery tokens not found");
+        }
+      }
 
-      if (error) throw error;
+      localStorage.removeItem('recovery_access_token');
+      localStorage.removeItem('recovery_refresh_token');
 
       toast({
         title: "Password updated",
@@ -122,7 +123,9 @@ const ResetPassword = () => {
         variant: "success",
       });
 
+      await supabase.auth.signOut();
       navigate('/login');
+      
     } catch (error: any) {
       toast({
         title: "Failed to reset password",
@@ -133,6 +136,14 @@ const ResetPassword = () => {
       setIsSubmitting(false);
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-secondary/20 flex items-center justify-center">
+        <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-secondary/20">
