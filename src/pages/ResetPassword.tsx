@@ -16,43 +16,43 @@ const ResetPassword = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [validSession, setValidSession] = useState(false);
+  const [recoveryToken, setRecoveryToken] = useState<string | null>(null);
   const location = useLocation();
   const navigate = useNavigate();
 
-  // Check if we're coming from a password reset email
   useEffect(() => {
-    const checkSession = async () => {
+    const verifyRecoveryToken = async () => {
       setIsLoading(true);
       
       try {
-        // First, check if we have a valid session
-        const { data: { session } } = await supabase.auth.getSession();
-        
-        if (session) {
-          console.log("User has a session");
-          setValidSession(true);
-          setIsLoading(false);
-          return;
-        }
-        
-        // If no session, see if we have reset tokens in the URL hash
+        // Check for hash parameters
         const hashParams = new URLSearchParams(location.hash.substring(1));
         const type = hashParams.get('type');
+        const accessToken = hashParams.get('access_token');
         
-        if (type === 'recovery') {
-          console.log("Found recovery parameters in URL");
-          
-          // Just check if we're coming from a recovery link - don't manipulate the tokens
-          setValidSession(true);
-          setIsLoading(false);
-          return;
+        // Validate we have a recovery-type hash with an access token
+        if (type !== 'recovery' || !accessToken) {
+          throw new Error('Invalid reset link parameters');
         }
         
-        console.log("No valid session or recovery parameters found");
-        throw new Error('Invalid reset link');
+        // Store the token for later verification during password update
+        setRecoveryToken(accessToken);
+        
+        // Check if we can get a valid session with this token
+        // This validates the token without fully logging the user in
+        const refreshToken = hashParams.get('refresh_token') || '';
+        const { error } = await supabase.auth.setSession({
+          access_token: accessToken,
+          refresh_token: refreshToken
+        });
+        
+        if (error) {
+          throw new Error('Invalid or expired reset token');
+        }
+        
+        setIsLoading(false);
       } catch (error) {
-        console.error('Error validating reset session:', error);
+        console.error('Token verification error:', error);
         toast({
           title: 'Invalid reset link',
           description: 'This password reset link is invalid or has expired. Please request a new one.',
@@ -62,11 +62,27 @@ const ResetPassword = () => {
       }
     };
 
-    checkSession();
+    verifyRecoveryToken();
+    
+    // Clean up function to sign out when component unmounts
+    return () => {
+      supabase.auth.signOut();
+    };
   }, [location, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Additional validation to ensure we have a recovery token
+    if (!recoveryToken) {
+      toast({
+        title: 'Invalid session',
+        description: 'Unable to reset your password. Please request a new reset link.',
+        variant: 'destructive',
+      });
+      navigate('/login');
+      return;
+    }
     
     if (password !== confirmPassword) {
       toast({
@@ -89,7 +105,7 @@ const ResetPassword = () => {
     setIsSubmitting(true);
     
     try {
-      // Simply update the user's password
+      // Update the password
       const { error } = await supabase.auth.updateUser({
         password: password
       });
