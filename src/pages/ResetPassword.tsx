@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Navbar } from '@/components/Navbar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,42 +15,33 @@ const ResetPassword = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isValidResetLink, setIsValidResetLink] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [validToken, setValidToken] = useState(false);
-  const location = useLocation();
   const navigate = useNavigate();
 
+  // Verify that we have a valid reset session
   useEffect(() => {
-    const validateToken = async () => {
+    const checkResetSession = async () => {
       setIsLoading(true);
       
       try {
-        // Extract token data from the URL hash
-        const hashParams = new URLSearchParams(location.hash.substring(1));
-        const accessToken = hashParams.get('access_token');
-        const refreshToken = hashParams.get('refresh_token');
-        const type = hashParams.get('type');
+        // Get current session
+        const { data, error } = await supabase.auth.getSession();
         
-        // Validate we have the required parameters
-        if (!accessToken || !refreshToken || type !== 'recovery') {
-          throw new Error('Invalid reset link parameters');
+        if (error) {
+          throw error;
         }
         
-        // Validate the token by trying to set a session
-        const { data, error } = await supabase.auth.setSession({
-          access_token: accessToken,
-          refresh_token: refreshToken
-        });
-        
-        if (error || !data.session) {
-          throw new Error('Invalid or expired token');
+        // If we don't have a session at all, user didn't come from a reset link
+        if (!data.session) {
+          throw new Error('No active session');
         }
         
-        // We have a valid recovery token
-        setValidToken(true);
+        // Set flag that we have a valid reset session
+        setIsValidResetLink(true);
         setIsLoading(false);
       } catch (error) {
-        console.error('Token validation error:', error);
+        console.error('Session error:', error);
         toast({
           title: 'Invalid reset link',
           description: 'This password reset link is invalid or has expired. Please request a new one.',
@@ -59,18 +50,17 @@ const ResetPassword = () => {
         navigate('/login');
       }
     };
-
-    validateToken();
-  }, [location, navigate]);
+    
+    checkResetSession();
+  }, [navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Make sure we have a valid token
-    if (!validToken) {
+    if (!isValidResetLink) {
       toast({
-        title: 'Invalid session',
-        description: 'Your password reset session is invalid. Please request a new reset link.',
+        title: 'Invalid reset link',
+        description: 'You must use a valid password reset link to change your password.',
         variant: 'destructive',
       });
       navigate('/login');
@@ -98,12 +88,13 @@ const ResetPassword = () => {
     setIsSubmitting(true);
     
     try {
-      // Update the password
       const { error } = await supabase.auth.updateUser({
         password: password
       });
       
-      if (error) throw error;
+      if (error) {
+        throw error;
+      }
       
       toast({
         title: "Password updated",
@@ -227,23 +218,8 @@ const ResetPassword = () => {
           </CardContent>
         </Card>
       </div>
-      
-      {/* Add a cleanup effect when component unmounts */}
-      <UseEffectCleanup />
     </div>
   );
-};
-
-// Component to handle cleanup when navigating away
-const UseEffectCleanup = () => {
-  useEffect(() => {
-    // Return a cleanup function that will run when component unmounts
-    return () => {
-      supabase.auth.signOut().catch(console.error);
-    };
-  }, []);
-  
-  return null;
 };
 
 export default ResetPassword;
