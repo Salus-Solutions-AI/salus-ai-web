@@ -20,7 +20,6 @@ const Auth = () => {
   const [isResettingPassword, setIsResettingPassword] = useState(false);
   const navigate = useNavigate();
 
-  // Redirect if already authenticated
   if (user && !isLoading) {
     navigate('/summary');
     return null;

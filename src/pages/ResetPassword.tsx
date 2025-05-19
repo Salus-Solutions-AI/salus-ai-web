@@ -19,29 +19,24 @@ const ResetPassword = () => {
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
 
-  // Verify that we have a valid reset session
   useEffect(() => {
     const checkResetSession = async () => {
       setIsLoading(true);
       
       try {
-        // Get current session
         const { data, error } = await supabase.auth.getSession();
         
         if (error) {
           throw error;
         }
         
-        // If we don't have a session at all, user didn't come from a reset link
         if (!data.session) {
           throw new Error('No active session');
         }
         
-        // Set flag that we have a valid reset session
         setIsValidResetLink(true);
         setIsLoading(false);
       } catch (error) {
-        console.error('Session error:', error);
         toast({
           title: 'Invalid reset link',
           description: 'This password reset link is invalid or has expired. Please request a new one.',
@@ -102,12 +97,10 @@ const ResetPassword = () => {
         variant: "success",
       });
       
-      // Sign out and redirect to login
       await supabase.auth.signOut();
       navigate('/login');
       
     } catch (error: any) {
-      console.error("Password update error:", error);
       toast({
         title: "Failed to reset password",
         description: error.message || "An error occurred while resetting your password.",
