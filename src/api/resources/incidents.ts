@@ -3,8 +3,12 @@ import { apiRequest } from '../client';
 import { Incident } from '@/types';
 
 export const incidentsApi = {
-  getAll: (session: Session) =>
-    apiRequest<Incident[]>('/api/incidents', session),
+  getAll: (session: Session, startTime?: string, endTime?: string) => {
+    const queryParams: Record<string, string> = {};
+    if (startTime) queryParams.start_time = startTime;
+    if (endTime) queryParams.end_time = endTime;
+    return apiRequest<Incident[]>('/api/incidents', session, undefined, queryParams);
+  },
 
   getById: (session: Session, id: string) =>
     apiRequest<Incident>(`/api/incidents/${id}`, session),

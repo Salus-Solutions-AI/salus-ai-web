@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -15,13 +14,18 @@ import {
 } from 'recharts';
 import { toast } from '@/components/ui/use-toast';
 import { incidentsApi } from '@/api/resources/incidents';
+import { Calendar, X } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { format } from "date-fns";
+import { cn } from '@/lib/utils';
 
-// Updated cohesive color scheme that matches the website's aesthetic
-const CLERY_COLORS = ['#8B5CF6', '#222222']; // Purple for Clery, Dark grey for non-Clery
-
-// Generate a color palette based on the primary colors with enough variations for up to 25 categories
 const generateColorPalette = (count: number) => {
-  // Base colors aligned with the site's theme
   const baseColors = [
     '#8B5CF6', // Primary purple (from Clery color)
     '#6366F1', // Indigo
@@ -43,10 +47,8 @@ const generateColorPalette = (count: number) => {
   
   // Generate lighter and darker variations of base colors
   for (let i = 0; i < baseColors.length && palette.length < count; i++) {
-    // Add lighter variation (decrease saturation, increase lightness)
     palette.push(baseColors[i] + '99'); // 60% opacity version
     
-    // Add darker variation (increase saturation, decrease lightness)
     if (palette.length < count) {
       palette.push(baseColors[i] + 'cc'); // 80% opacity version
     }
@@ -62,6 +64,8 @@ const IncidentStats = () => {
   const [statusData, setStatusData] = useState<{ name: string; count: number }[]>([]);
   const [categoryColors, setCategoryColors] = useState<string[]>([]);
   const [statusColors, setStatusColors] = useState<string[]>([]);
+  const [startTime, setStartTime] = useState<Date | undefined>();
+  const [endTime, setEndTime] = useState<Date | undefined>();
   const { user, session } = useAuth();
 
   useEffect(() => {
@@ -70,7 +74,9 @@ const IncidentStats = () => {
       
       try {
         if (user) {
-          const incidents = await incidentsApi.getAll(session);
+          const startDateStr = startTime ? startTime.toISOString() : undefined;
+          const endDateStr = endTime ? endTime.toISOString() : undefined;
+          const incidents = await incidentsApi.getAll(session, startDateStr, endDateStr);
           
           setIncidents(incidents);
           processData(incidents);
@@ -89,10 +95,9 @@ const IncidentStats = () => {
     };
 
     fetchIncidents();
-  }, [user?.id]);
+  }, [user?.id, startTime, endTime]);
 
   const processData = (incidents: Incident[]) => {
-    // Process category data
     const categoryCount: Record<string, number> = {};
     incidents.forEach(incident => {
       if (incident.status !== IncidentProcessingStatus.COMPLETED) return;
@@ -109,7 +114,6 @@ const IncidentStats = () => {
     setCategoryData(categoryDataArray);
     setCategoryColors(generateColorPalette(categoryDataArray.length));
 
-    // Process status data
     const statusCount: Record<string, number> = {};
     incidents.forEach(incident => {
       if (!incident.status) return;
@@ -139,7 +143,85 @@ const IncidentStats = () => {
   };
 
   return (
-    <div className="grid grid-cols-1 gap-6 mt-6">
+    <div className="grid grid-cols-1 gap-6 -mt-6">
+      <div className="flex justify-end">
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2">
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className={cn(
+                    "w-[180px] justify-start text-left font-normal",
+                    !startTime && "text-muted-foreground"
+                  )}
+                >
+                  <Calendar className="mr-2 h-4 w-4" />
+                  {startTime ? format(startTime, "MMM d, yyyy") : "Start date"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="end">
+                <CalendarComponent
+                  mode="single"
+                  selected={startTime}
+                  onSelect={setStartTime}
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
+
+            {startTime && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 w-8 p-0"
+                onClick={() => setStartTime(undefined)}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className={cn(
+                    "w-[180px] justify-start text-left font-normal",
+                    !endTime && "text-muted-foreground"
+                  )}
+                >
+                  <Calendar className="mr-2 h-4 w-4" />
+                  {endTime ? format(endTime, "MMM d, yyyy") : "End date"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="end">
+                <CalendarComponent
+                  mode="single"
+                  selected={endTime}
+                  onSelect={setEndTime}
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
+
+            {endTime && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 w-8 p-0"
+                onClick={() => setEndTime(undefined)}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
+        </div>
+      </div>
+
       <Card className="bg-card shadow-sm animate-appear">
         <CardHeader>
           <CardTitle>Incident Statistics</CardTitle>

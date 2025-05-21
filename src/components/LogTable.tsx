@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Search, Flag, FileSpreadsheet } from 'lucide-react';
+import { Search, Flag, FileSpreadsheet, Calendar, X } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -16,6 +16,13 @@ import { useAuth } from '@/contexts/AuthContext';
 import { createLogExcel, downloadFile } from '@/utils/exportUtils';
 import { cn } from '@/lib/utils';
 import { incidentsApi } from '@/api/resources/incidents';
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { format } from "date-fns";
 
 const LogTable = () => {
   const [incidents, setIncidents] = useState<Incident[]>([]);
@@ -23,6 +30,8 @@ const LogTable = () => {
   const [isDownloading, setIsDownloading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [showCleryOnly, setShowCleryOnly] = useState(false);
+  const [startTime, setStartTime] = useState<Date | undefined>();
+  const [endTime, setEndTime] = useState<Date | undefined>();
   const { session, user } = useAuth();
 
   const fetchIncidents = async () => {
@@ -30,12 +39,15 @@ const LogTable = () => {
     
     try {
       if (user) {
-        const incidents = await incidentsApi.getAll(session);
+        const startDateStr = startTime ? startTime.toISOString() : undefined;
+        const endDateStr = endTime ? endTime.toISOString() : undefined;
+        const incidents = await incidentsApi.getAll(session, startDateStr, endDateStr);
 
-        const startOfDay = new Date(new Date().setHours(0, 0, 0, 0)).toISOString();
-        const todayIncidents = incidents.filter(incident => incident.uploadedAt >= startOfDay && incident.status === IncidentProcessingStatus.COMPLETED);
+        const filteredIncidents = incidents.filter(incident => 
+          incident.status === IncidentProcessingStatus.COMPLETED
+        );
 
-        setIncidents(todayIncidents);
+        setIncidents(filteredIncidents);
       }
     } catch (error) {
       console.error('Error fetching incidents:', error);
@@ -52,7 +64,7 @@ const LogTable = () => {
 
   useEffect(() => {
     fetchIncidents();
-  }, [user?.id]);
+  }, [user?.id, startTime, endTime]);
 
   const handleDownloadExcel = async () => {
     if (incidents.length === 0) {
@@ -137,6 +149,91 @@ const LogTable = () => {
         </div>
         
         <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2">
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className={cn(
+                      "w-[180px] justify-start text-left font-normal",
+                      !startTime && "text-muted-foreground"
+                    )}
+                  >
+                    <Calendar className="mr-2 h-4 w-4" />
+                    {startTime ? format(startTime, "MMM d, yyyy") : "Start date"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <CalendarComponent
+                    mode="single"
+                    selected={startTime}
+                    onSelect={setStartTime}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+
+              {startTime && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 w-8 p-0"
+                  onClick={() => setStartTime(undefined)}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className={cn(
+                      "w-[180px] justify-start text-left font-normal",
+                      !endTime && "text-muted-foreground"
+                    )}
+                  >
+                    <Calendar className="mr-2 h-4 w-4" />
+                    {endTime ? format(endTime, "MMM d, yyyy") : "End date"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <CalendarComponent
+                    mode="single"
+                    selected={endTime}
+                    onSelect={setEndTime}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+
+              {endTime && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 w-8 p-0"
+                  onClick={() => setEndTime(undefined)}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
+          </div>
+
+          <Button 
+            variant={showCleryOnly ? "default" : "outline"} 
+            onClick={() => setShowCleryOnly(!showCleryOnly)}
+            className={showCleryOnly ? "bg-[#9b87f5] hover:bg-[#8B5CF6]" : ""}
+          >
+            <Flag className="h-4 w-4 mr-2" />
+            Clery Only
+          </Button>
+
           <Button
             type="button"
             disabled={isDownloading || incidents.length === 0}
@@ -154,15 +251,6 @@ const LogTable = () => {
                     Download Logs
                 </div>
             )}
-          </Button>
-
-          <Button 
-            variant={showCleryOnly ? "default" : "outline"} 
-            onClick={() => setShowCleryOnly(!showCleryOnly)}
-            className={showCleryOnly ? "bg-[#9b87f5] hover:bg-[#8B5CF6]" : ""}
-          >
-            <Flag className="h-4 w-4 mr-2" />
-            Clery Only
           </Button>
         </div>
       </div>
@@ -228,7 +316,7 @@ const LogTable = () => {
               <h3 className="text-lg font-medium mb-1">No Completed Incidents Found</h3>
               <p className="text-muted-foreground">
                 {incidents.length === 0 
-                  ? "No incidents reported today. Try uploading an incident first."
+                  ? "No incidents reported in the selected date range. Try adjusting your date range or filters."
                   : "Try adjusting your search or filter criteria"}
               </p>
               {incidents.length > 0 && (
@@ -237,6 +325,8 @@ const LogTable = () => {
                   onClick={() => {
                     setSearchQuery('');
                     setShowCleryOnly(false);
+                    setStartTime(undefined);
+                    setEndTime(undefined);
                   }}
                 >
                   Clear all filters

@@ -9,14 +9,21 @@ export async function apiRequest<T>(
     headers: {
       'Content-Type': 'application/json',
     },
-  }
+  },
+  queryParams?: Record<string, string>
 ): Promise<T> {
   const headers = {
     'Authorization': `Bearer ${session.access_token}`,
     ...options.headers,
   };
 
-  const response = await fetch(`${VITE_SALUS_SERVER_URL}${endpoint}`, {
+  let url = `${VITE_SALUS_SERVER_URL}${endpoint}`;
+  if (queryParams) {
+    const params = new URLSearchParams(queryParams);
+    url += `?${params.toString()}`;
+  }
+
+  const response = await fetch(url, {
     ...options,
     headers,
   });
