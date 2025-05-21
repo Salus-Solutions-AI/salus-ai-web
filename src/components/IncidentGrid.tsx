@@ -248,17 +248,11 @@ const IncidentGrid = ({ refresh, refreshQueuedOnly, queuedIncidents, setQueuedIn
       </div>
       
       {isLoading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6" role="status" aria-label="Loading incidents">
-          {Array.from({ length: 6 }).map((_, index) => (
-            <div 
-              key={index} 
-              className="bg-secondary/30 animate-pulse rounded-lg h-64"
-              style={{ animationDelay: `${index * 100}ms` }}
-            />
-          ))}
+        <div className="w-full h-96 flex items-center justify-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary" role="status" aria-label="Loading incidents"></div>
         </div>
-      ) : filteredIncidents.length > 0 ? (
-        viewMode === 'card' ? (
+      ) : viewMode === 'card' ? (
+        filteredIncidents.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredIncidents.map((incident, index) => (
               <div 
@@ -276,6 +270,33 @@ const IncidentGrid = ({ refresh, refreshQueuedOnly, queuedIncidents, setQueuedIn
             ))}
           </div>
         ) : (
+          <div className="text-center py-16 bg-secondary/30 rounded-lg">
+            <div className="w-16 h-16 rounded-full bg-secondary mx-auto flex items-center justify-center mb-4">
+              <Search className="h-8 w-8 text-muted-foreground" />
+            </div>
+            <h3 className="text-lg font-medium mb-1">No Incidents Found</h3>
+            <p className="text-muted-foreground">
+              {incidents.length === 0 
+                ? "You haven't uploaded any incidents yet. Try uploading one above."
+                : showCleryOnly 
+                  ? "No Clery incidents found. Try disabling the Clery filter."
+                  : "Try adjusting your search or filter criteria"}
+            </p>
+            {incidents.length > 0 && (
+              <Button
+                variant="link"
+                onClick={() => {
+                  setSearchQuery('');
+                  setShowCleryOnly(false);
+                }}
+              >
+                Clear all filters
+              </Button>
+            )}
+          </div>
+        )
+      ) : (
+        filteredIncidents.length > 0 ? (
           <div className="animate-fade-in">
             <Table>
               <TableHeader className="bg-[#F1F0FB] dark:bg-slate-800">
@@ -377,32 +398,32 @@ const IncidentGrid = ({ refresh, refreshQueuedOnly, queuedIncidents, setQueuedIn
               </TableBody>
             </Table>
           </div>
-        )
-      ) : (
-        <div className="text-center py-16 bg-secondary/30 rounded-lg">
-          <div className="w-16 h-16 rounded-full bg-secondary mx-auto flex items-center justify-center mb-4">
-            <Search className="h-8 w-8 text-muted-foreground" />
+        ) : (
+          <div className="text-center py-16 bg-secondary/30 rounded-lg">
+            <div className="w-16 h-16 rounded-full bg-secondary mx-auto flex items-center justify-center mb-4">
+              <Search className="h-8 w-8 text-muted-foreground" />
+            </div>
+            <h3 className="text-lg font-medium mb-1">No Incidents Found</h3>
+            <p className="text-muted-foreground">
+              {incidents.length === 0 
+                ? "You haven't uploaded any incidents yet. Try uploading one above."
+                : showCleryOnly 
+                  ? "No Clery incidents found. Try disabling the Clery filter."
+                  : "Try adjusting your search or filter criteria"}
+            </p>
+            {incidents.length > 0 && (
+              <Button
+                variant="link"
+                onClick={() => {
+                  setSearchQuery('');
+                  setShowCleryOnly(false);
+                }}
+              >
+                Clear all filters
+              </Button>
+            )}
           </div>
-          <h3 className="text-lg font-medium mb-1">No Incidents Found</h3>
-          <p className="text-muted-foreground">
-            {incidents.length === 0 
-              ? "You haven't uploaded any incidents yet. Try uploading one above."
-              : showCleryOnly 
-                ? "No Clery incidents found. Try disabling the Clery filter."
-                : "Try adjusting your search or filter criteria"}
-          </p>
-          {incidents.length > 0 && (
-            <Button
-              variant="link"
-              onClick={() => {
-                setSearchQuery('');
-                setShowCleryOnly(false);
-              }}
-            >
-              Clear all filters
-            </Button>
-          )}
-        </div>
+        )
       )}
     </div>
   );
