@@ -74,7 +74,9 @@ describe('incidentsApi', () => {
 
       expect(apiClient.apiRequest).toHaveBeenCalledWith(
         '/api/incidents',
-        mockSession
+        mockSession,
+        undefined,
+        {}
       );
       expect(result).toEqual(mockIncidents);
     });
