@@ -217,7 +217,7 @@ const Account = () => {
                         <FormControl>
                           <div className="relative">
                             <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                            <Input placeholder="you@example.com" className="pl-9" {...field} />
+                            <Input placeholder="you@example.com" className="pl-9" {...field} disabled />
                           </div>
                         </FormControl>
                         <FormMessage />
@@ -234,7 +234,7 @@ const Account = () => {
                         <FormControl>
                           <div className="relative">
                             <Building className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                            <Input placeholder="Your organization" className="pl-9" {...field} />
+                            <Input placeholder="Your organization" className="pl-9" {...field} disabled />
                           </div>
                         </FormControl>
                         <FormMessage />
