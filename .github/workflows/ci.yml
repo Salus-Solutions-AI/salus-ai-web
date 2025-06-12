@@ -23,3 +23,7 @@ jobs:
 
     - name: Run tests
       run: npm test
+      env:
+        VITE_SALUS_SERVER_URL: "dummy_server_url"
+        VITE_SUPABASE_URL: "dummy_supabase_url"
+        VITE_SUPABASE_PUBLIC_ANON_KEY: "dummy_supabase_key"
