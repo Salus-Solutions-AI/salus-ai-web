@@ -5,6 +5,8 @@ import * as z from 'zod';
 import { Eye, EyeOff, Save, UserCircle, Mail, Building, KeyRound } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { organizationsApi } from '@/api/resources/organizations';
+import type { Organization } from '@/types';
 import {
   Form,
   FormControl,
@@ -43,6 +45,7 @@ const Account = () => {
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [passwordError, setPasswordError] = useState('');
+  const [organization, setOrganization] = useState<Organization | null>(null);
 
   const profileForm = useForm({
     resolver: zodResolver(profileSchema),
@@ -63,14 +66,35 @@ const Account = () => {
   });
 
   useEffect(() => {
+    const fetchOrganization = async () => {
+      if (!session || !profile?.organizationId) return;
+      
+      try {
+        const org = await organizationsApi.getById(session, profile.organizationId);
+        setOrganization(org);
+        profileForm.setValue('organization', org.name);
+      } catch (error) {
+        console.error('Error fetching organization:', error);
+        toast({
+          title: "Error loading organization",
+          description: "Failed to load organization information. Please try again.",
+          variant: "destructive",
+        });
+      }
+    };
+
+    fetchOrganization();
+  }, [session, profile?.organizationId, profileForm]);
+
+  useEffect(() => {
     if (user && profile) {
       profileForm.reset({
         name: profile.fullName || '',
         email: user.email || '',
-        organization: profile.organization || '',
+        organization: organization?.name || '',
       });
     }
-  }, [user?.id, profile, profileForm]);
+  }, [user?.id, profile, organization, profileForm]);
 
   const onProfileSubmit = async (data) => {
     if (!user) return;

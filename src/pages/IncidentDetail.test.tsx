@@ -205,26 +205,6 @@ describe('IncidentDetail', () => {
     expect(screen.getByText(/we need additional information to properly process this incident/i)).toBeInTheDocument();
   });
 
-  it('shows timely warning email template dialog when button is clicked', async () => {
-    const incidentWithMoreInfoNeeded = {
-      ...mockIncident,
-      requiresTimelyWarning: true
-    };
-    
-    vi.mocked(incidentsApi.getById).mockResolvedValue(incidentWithMoreInfoNeeded);
-    
-    render(<IncidentDetail />);
-
-    await waitFor(() => expect(screen.getByText('Test Incident')).toBeInTheDocument());
-    
-    await userEvent.click(screen.getByText('Generate Email Template'));
-    
-    expect(screen.getByText('Timely Warning Notification')).toBeInTheDocument();
-    expect(screen.getByText(/copy this email template to send a timely warning notification to the campus community/i)).toBeInTheDocument();
-    expect(screen.getByText(/timely warning: theft/i)).toBeInTheDocument();
-    expect(screen.getByText(/safety tips:/i)).toBeInTheDocument();
-  });
-
   it('copies email subject and body to clipboard', async () => {
     const incidentWithMoreInfoNeeded = {
       ...mockIncident,

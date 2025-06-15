@@ -1,8 +1,7 @@
 export interface Profile {
   id: string;
   fullName: string;
-  organization: string;
-  createdCategories: boolean;
+  organizationId: string;
 }
 
 export interface Incident {
@@ -81,4 +80,13 @@ export interface LogEntry {
   'Date Occured'?: string;
   'Time Occured'?: string;
   'Location'?: string;
+}
+
+export interface Organization {
+  id: string;
+  name: string;
+  additionalInfoEmailSubject: string;
+  additionalInfoEmailBody: string;
+  timelyWarningEmailSubject: string;
+  timelyWarningEmailBody: string;
 }

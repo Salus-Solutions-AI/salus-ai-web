@@ -4,6 +4,7 @@ import { Session, User } from '@supabase/supabase-js';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { toast } from '@/components/ui/use-toast';
 import { profilesApi } from '@/api/resources/profiles';
+import { organizationsApi } from '@/api/resources/organizations';
 
 type AuthContextType = {
   session: Session | null;
@@ -24,11 +25,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<any | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSigningUp, setIsSigningUp] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
 
   const fetchProfile = async (userId: string) => {
-    if (!session) return;
+    if (!session || isSigningUp) {
+      return;
+    }
     try {
       const profile = await profilesApi.getById(session, userId);
       setProfile(profile);
@@ -110,9 +114,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const signUp = async (email: string, password: string, name: string, organization: string) => {
+    setIsSigningUp(true);
     try {
-      console.log("Signing up with organization:", organization); // Debug log
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -124,7 +128,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       });
       
       if (error) throw error;
-      
+
+      await profilesApi.create(data.session, {
+        id: data.user?.id,
+        fullName: name,
+        organization: organization,
+      });
+
       toast({
         title: "Account created!",
         description: "Please check your email to verify your account.",
@@ -139,6 +149,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         variant: "destructive",
       });
       throw error;
+    } finally {
+      setIsSigningUp(false);
     }
   };
 
