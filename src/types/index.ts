@@ -1,9 +1,7 @@
 export interface Profile {
   id: string;
   fullName: string;
-  organization: string;
   organizationId: string;
-  createdCategories: boolean;
 }
 
 export interface Incident {

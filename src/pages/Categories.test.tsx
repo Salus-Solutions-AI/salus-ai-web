@@ -3,7 +3,6 @@ import { render, screen, waitFor } from '../test/utils/test-utils';
 import userEvent from '@testing-library/user-event';
 import Categories from './Categories';
 import { categoriesApi } from '@/api/resources/categories';
-import { defaultCategoriesApi } from '@/api/resources/default_categories';
 import { profilesApi } from '@/api/resources/profiles';
 import { Category } from '@/types';
 
@@ -81,8 +80,7 @@ describe('Categories Page', () => {
     vi.mocked(profilesApi.getById).mockResolvedValue({ 
       id: 'user-1',
       fullName: 'Test User',
-      organization: 'Test Org',
-      createdCategories: true 
+      organizationId: 'org-1',
     });
   });
 
@@ -161,40 +159,4 @@ describe('Categories Page', () => {
     expect(screen.getByRole('dialog')).toBeInTheDocument();
     expect(screen.getByText(/delete category/i)).toBeInTheDocument();
   });
-
-  it('creates default categories if user has none', async () => {
-    vi.mocked(profilesApi.getById).mockResolvedValueOnce({ 
-      id: 'user-1',
-      fullName: 'Test User',
-      organization: 'Test Org',
-      createdCategories: false 
-    });
-    
-    const defaultCategories = [
-      { 
-        id: 'default-1',
-        name: 'Default 1', 
-        description: 'Default description 1',
-        longDescription: '',
-        createdAt: '2023-01-01T00:00:00Z',
-        createdBy: 'system'
-      },
-      { 
-        id: 'default-2',
-        name: 'Default 2', 
-        description: 'Default description 2',
-        longDescription: '',
-        createdAt: '2023-01-01T00:00:00Z',
-        createdBy: 'system'
-      }
-    ];
-    vi.mocked(defaultCategoriesApi.getAll).mockResolvedValueOnce(defaultCategories);
-    
-    render(<Categories />);
-    
-    await waitFor(() => {
-      expect(categoriesApi.create).toHaveBeenCalled();
-      expect(profilesApi.update).toHaveBeenCalled();
-    });
-  });
-}); 
+});
