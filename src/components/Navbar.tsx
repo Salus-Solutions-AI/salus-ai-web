@@ -155,13 +155,18 @@ export const Navbar = () => {
               <DropdownMenuContent align="end" className="w-56">
                 <DropdownMenuLabel>My Account</DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => navigate('/account')} className="cursor-pointer">
-                  <Settings className="mr-2 h-4 w-4" />
-                  <span>Account Settings</span>
+                <DropdownMenuItem onClick={() => navigate('/account')}>
+                  <UserCircle className="mr-2 h-4 w-4" />
+                  Account Settings
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={handleSignOut} className="text-destructive cursor-pointer">
+                <DropdownMenuItem onClick={() => navigate('/organization')}>
+                  <Settings className="mr-2 h-4 w-4" />
+                  Organization Settings
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleSignOut}>
                   <LogOut className="mr-2 h-4 w-4" />
-                  <span>Sign out</span>
+                  Sign Out
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -238,6 +243,13 @@ export const Navbar = () => {
                 >
                   <Settings className="mr-2 h-4 w-4" />
                   Account Settings
+                </Link>
+                <Link
+                  to="/organization-settings"
+                  className="block px-3 py-2 rounded-md text-base font-medium flex items-center"
+                >
+                  <Settings className="mr-2 h-4 w-4" />
+                  Organization Settings
                 </Link>
                 <Button 
                   variant="ghost" 

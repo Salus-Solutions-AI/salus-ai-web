@@ -253,7 +253,7 @@ const IncidentDetail = () => {
     if (!incident) return "";
 
     if (incident.requiresTimelyWarning) {
-      return `Timely Warning: ${incident.category} Near ${incident.location}`;
+      return `Timely Warning Crime Bulletin`;
     }
     
     return `Additional Information Needed for Incident #${incident.number}`;
@@ -263,11 +263,15 @@ const IncidentDetail = () => {
     if (!incident) return "";
     
     if (incident.requiresTimelyWarning) {
-      return `Timely Warning Notification
+      return `Timely Warning Crime Bulletin
+
+This Timely Warning Bulletin is being issued in compliance with the
+Jeanne Clery Act and the purpose is to provide preventative information to the Campus
+community to aid members from becoming the victim of a similar crime.
       
 Incident: ${incident.category}
-Date/Time Reported: ${formatDate(incident.uploadedAt)}
 Date/Time Occurred: ${formatDate(incident.date)} ${incident.timeStr}
+Date/Time Reported: ${formatDate(incident.uploadedAt)}
 Location: ${incident.location}
 
 Incident Summary:

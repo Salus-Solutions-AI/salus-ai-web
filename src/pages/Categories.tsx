@@ -27,8 +27,6 @@ import {
 } from '@/components/ui/table';
 import { Category } from '@/types';
 import { categoriesApi } from '@/api/resources/categories';
-import { defaultCategoriesApi } from '@/api/resources/default_categories';
-import { profilesApi } from '@/api/resources/profiles';
 
 const Categories = () => {
   const { session, user } = useAuth();
@@ -45,29 +43,6 @@ const Categories = () => {
   const fetchCategories = async () => {
     try {
       setIsLoading(true);
-
-      const profile = await profilesApi.getById(session, user.id);
-      console.log(profile);
-
-      if (!profile.createdCategories) {
-        // copy default categories to user's profile
-        var defaultCategories = await defaultCategoriesApi.getAll(session);
-
-        var categories = defaultCategories.map((defaultCategory) => {
-          return {
-            name: defaultCategory.name,
-            description: defaultCategory.description,
-            created_by: user.id,
-            created_at: new Date().toISOString()
-          };
-        });
-
-        for (const category of categories) {
-          await categoriesApi.create(session, category);
-        }
-
-        await profilesApi.update(session, user.id, { createdCategories: true });
-      }
 
       const categoriesData = await categoriesApi.getAll(session);
       setCategories(categoriesData);
@@ -262,7 +237,6 @@ const Categories = () => {
         </Card>
       </div>
 
-      {/* Add/Edit Category Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent>
           <form onSubmit={handleSubmit}>
@@ -315,7 +289,6 @@ const Categories = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Delete Confirmation Dialog */}
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <DialogContent>
           <DialogHeader>

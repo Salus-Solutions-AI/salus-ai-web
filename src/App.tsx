@@ -13,6 +13,7 @@ import Logs from "./pages/Logs";
 import Summary from "./pages/Summary";
 import Auth from "./pages/Auth";
 import Account from "./pages/Account";
+import Organization from "./pages/Organization";
 import NotFound from "./pages/NotFound";
 import ResetPassword from "./pages/ResetPassword";
 
@@ -37,6 +38,7 @@ const App = () => (
             {/* Protected routes */}
             <Route element={<RouteGuard />}>
               <Route path="/account" element={<Account />} />
+              <Route path="/organization" element={<Organization />} />
               <Route path="/categories" element={<Categories />} />
               <Route path="/incidents" element={<Incidents />} />
               <Route path="/incidents/:id" element={<IncidentDetail />} />

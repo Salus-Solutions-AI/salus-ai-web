@@ -4,6 +4,7 @@ import { Session, User } from '@supabase/supabase-js';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { toast } from '@/components/ui/use-toast';
 import { profilesApi } from '@/api/resources/profiles';
+import { organizationsApi } from '@/api/resources/organizations';
 
 type AuthContextType = {
   session: Session | null;
@@ -24,16 +25,27 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<any | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSigningUp, setIsSigningUp] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
 
   const fetchProfile = async (userId: string) => {
-    if (!session) return;
+    if (!session || isSigningUp) {
+      console.log('Skipping profile fetch:', { hasSession: !!session, isSigningUp });
+      return;
+    }
     try {
+      console.log('Fetching profile for user:', userId);
       const profile = await profilesApi.getById(session, userId);
+      console.log('Profile fetched successfully:', profile);
       setProfile(profile);
     } catch (error) {
       console.error('Error fetching profile:', error);
+      // Don't set profile to null on error to prevent UI flicker
+      // Only set to null if we get a 401/403
+      if (error instanceof Error && error.message.includes('401') || error.message.includes('403')) {
+        setProfile(null);
+      }
     }
   };
 
@@ -110,9 +122,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const signUp = async (email: string, password: string, name: string, organization: string) => {
+    setIsSigningUp(true);
     try {
-      console.log("Signing up with organization:", organization); // Debug log
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -124,7 +136,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       });
       
       if (error) throw error;
-      
+
+      console.log("creating profile");
+      await profilesApi.create(data.session, {
+        id: data.user?.id,
+        fullName: name,
+        organization: organization,
+      });
+
       toast({
         title: "Account created!",
         description: "Please check your email to verify your account.",
@@ -139,6 +158,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         variant: "destructive",
       });
       throw error;
+    } finally {
+      setIsSigningUp(false);
     }
   };
 
