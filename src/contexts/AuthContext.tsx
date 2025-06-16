@@ -84,7 +84,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
               variant: "success",
             });
             
-            navigate('/summary');
+            navigate('/');
           } catch (createError) {
             if (createError instanceof Error && createError.message.includes('409')) {
               toast({
