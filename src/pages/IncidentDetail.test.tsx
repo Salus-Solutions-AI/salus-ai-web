@@ -2,8 +2,9 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '../test/utils/test-utils';
 import userEvent from '@testing-library/user-event';
 import IncidentDetail from './IncidentDetail';
-import { Incident, IncidentProcessingStatus } from '@/types';
+import { Incident, IncidentProcessingStatus, Organization } from '@/types';
 import { incidentsApi } from '@/api/resources/incidents';
+import { organizationsApi } from '@/api/resources/organizations';
 
 vi.mock('@/api/resources/incidents', () => ({
   incidentsApi: {
@@ -12,39 +13,68 @@ vi.mock('@/api/resources/incidents', () => ({
   }
 }));
 
+vi.mock('@/api/resources/organizations', () => ({
+  organizationsApi: {
+    getById: vi.fn()
+  }
+}));
+
 vi.mock('react-router-dom', async () => {
-    const actual = await vi.importActual('react-router-dom');
-    return {
+  const actual = await vi.importActual('react-router-dom');
+  return {
     ...actual,
     useParams: () => ({ id: '123' }),
     useNavigate: () => vi.fn()
-    };
+  };
 });
-
-vi.mock('@/components/ui/use-toast', () => ({
-  toast: vi.fn()
-}));
 
 vi.mock('@/contexts/AuthContext', () => ({
   useAuth: () => ({
-    user: { id: 'test-id' },
-    session: {
-      access_token: 'test-token',
-      refresh_token: 'refresh-token',
-      user: {
-        id: 'user-id',
-        app_metadata: {},
-        user_metadata: {},
-        aud: 'authenticated',
-        created_at: '2023-01-01T00:00:00.000Z'
-      },
-      expires_in: 3600,
-      expires_at: 123456789,
-      token_type: 'bearer'
-    }
+    session: { access_token: 'test-token' },
+    profile: { organizationId: 'org-123' },
+    user: { id: 'user-123' }
   }),
   AuthProvider: ({ children }) => children
 }));
+
+const mockOrganization: Organization = {
+  id: 'org-123',
+  name: 'Test University',
+  additionalInfoEmailSubject: 'Additional Information Needed for {{ title }}',
+  additionalInfoEmailBody: `Hello,
+
+We are reviewing {{ title }} that occurred on {{ datetimeOccurred }} at {{ location }}.
+
+We need additional information to properly process this incident. Specifically, we need:
+1. More detailed explanation of the events
+2. Names of any witnesses
+3. Any additional documentation or evidence
+
+Please reply to this email with the requested information at your earliest convenience.
+
+Thank you,
+Campus Safety Team`,
+  timelyWarningEmailSubject: 'Timely Warning: {{ category }}',
+  timelyWarningEmailBody: `Timely Warning Crime Bulletin
+
+This Timely Warning Bulletin is being issued in compliance with the
+Jeanne Clery Act and the purpose is to provide preventative information to the Campus
+community to aid members from becoming the victim of a similar crime.
+      
+Incident: {{ category }}
+Date/Time Occurred: {{ datetimeOccurred }}
+Date/Time Reported: {{ datetimeReported }}
+Location: {{ location }}
+
+Incident Summary:
+{{ summary }}
+
+Description of Reported Suspect:
+{{ suspectDescription }}
+
+Safety Tips:
+{{ safetyTips }}`
+};
 
 const mockIncident: Incident = {
   id: '123',
@@ -71,14 +101,22 @@ const mockIncident: Incident = {
 describe('IncidentDetail', () => {
   beforeEach(() => {
     vi.resetAllMocks();
+    vi.mocked(incidentsApi.getById).mockResolvedValue(mockIncident);
+    vi.mocked(organizationsApi.getById).mockResolvedValue(mockOrganization);
   });
 
-  it('displays incident details when loaded', async () => {
-    vi.mocked(incidentsApi.getById).mockResolvedValue(mockIncident);
+  const waitForDataToLoad = async () => {
+    await waitFor(() => {
+      expect(incidentsApi.getById).toHaveBeenCalled();
+      expect(organizationsApi.getById).toHaveBeenCalled();
+    });
+    await waitFor(() => expect(screen.getByText('Test Incident')).toBeInTheDocument());
+  };
 
+  it('displays incident details when loaded', async () => {
     render(<IncidentDetail />);
 
-    await waitFor(() => expect(screen.getByText('Test Incident')).toBeInTheDocument());
+    await waitForDataToLoad();
 
     expect(screen.getByText('Test Incident')).toBeInTheDocument();
     expect(screen.getByLabelText(/location/i)).toHaveValue('Campus Library');
@@ -105,11 +143,9 @@ describe('IncidentDetail', () => {
   });
 
   it('allows editing incident details', async () => {
-    vi.mocked(incidentsApi.getById).mockResolvedValue(mockIncident);
-
     render(<IncidentDetail />);
 
-    await waitFor(() => expect(screen.getByText('Test Incident')).toBeInTheDocument());
+    await waitForDataToLoad();
     
     const locationInput = screen.getByLabelText(/location/i);
     await userEvent.clear(locationInput);
@@ -127,11 +163,9 @@ describe('IncidentDetail', () => {
   });
 
   it('prevents both needsMoreInfo and requiresTimelyWarning from being selected', async () => {
-    vi.mocked(incidentsApi.getById).mockResolvedValue(mockIncident);
-
     render(<IncidentDetail />);
 
-    await waitFor(() => expect(screen.getByText('Test Incident')).toBeInTheDocument());
+    await waitForDataToLoad();
     
     const needsMoreInfoCheckbox = screen.getByLabelText(/needs more information/i);
     const requiresTimelyWarningCheckbox = screen.getByLabelText(/requires timely warning/i);
@@ -153,11 +187,9 @@ describe('IncidentDetail', () => {
   });
 
   it('allows marking incident as completed', async () => {
-    vi.mocked(incidentsApi.getById).mockResolvedValue(mockIncident);
-
     render(<IncidentDetail />);
 
-    await waitFor(() => expect(screen.getByText('Test Incident')).toBeInTheDocument());
+    await waitForDataToLoad();
     
     await userEvent.click(screen.getByText('Complete Review'));
     
@@ -178,7 +210,7 @@ describe('IncidentDetail', () => {
     
     render(<IncidentDetail />);
 
-    await waitFor(() => expect(screen.getByText('Test Incident')).toBeInTheDocument());
+    await waitForDataToLoad();
     
     await userEvent.click(screen.getByText('Complete Review'));
     
@@ -195,7 +227,7 @@ describe('IncidentDetail', () => {
     
     render(<IncidentDetail />);
 
-    await waitFor(() => expect(screen.getByText('Test Incident')).toBeInTheDocument());
+    await waitForDataToLoad();
     
     await userEvent.click(screen.getByText('Generate Email Template'));
     
@@ -221,7 +253,7 @@ describe('IncidentDetail', () => {
     });
     render(<IncidentDetail />);
 
-    await waitFor(() => expect(screen.getByText('Test Incident')).toBeInTheDocument());
+    await waitForDataToLoad();
     
     await userEvent.click(screen.getByText('Generate Email Template'));
     
