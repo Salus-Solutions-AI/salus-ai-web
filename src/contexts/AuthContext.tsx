@@ -86,6 +86,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                 description: "Your email has been confirmed and account is ready.",
                 variant: "success",
               });
+
+              navigate('/');
             } else {
               console.error('Error creating profile:', error);
               toast({
@@ -95,8 +97,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
               });
             }
           }
-
-          navigate('/');
         }
         
         setSession(session);
