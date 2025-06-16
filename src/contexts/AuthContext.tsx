@@ -4,6 +4,7 @@ import { Session, User } from '@supabase/supabase-js';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { toast } from '@/components/ui/use-toast';
 import { profilesApi } from '@/api/resources/profiles';
+import { organizationsApi } from '@/api/resources/organizations';
 
 type AuthContextType = {
   session: Session | null;
@@ -24,11 +25,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<any | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSigningUp, setIsSigningUp] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
 
   const fetchProfile = async (userId: string) => {
-    if (!session) return;
+    if (!session || isSigningUp) {
+      return;
+    }
     try {
       const profile = await profilesApi.getById(session, userId);
       setProfile(profile);
@@ -50,7 +54,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         const { data: { session } } = await supabase.auth.getSession();
         setSession(session);
         setUser(session?.user || null);
-
+  
         if (session?.user) {
           fetchProfile(session.user.id);
         }
@@ -60,11 +64,41 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setIsLoading(false);
       }
     };
-
+  
     setupSession();
-
+  
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        // Handle email confirmation sign-in
+        if (event === 'SIGNED_IN' && session?.user) {
+          try {
+            await profilesApi.getById(session, session.user.id);
+          } catch (error) {
+            if (error instanceof Error && error.message.includes('404')) {
+              await profilesApi.create(session, {
+                id: session.user.id,
+                fullName: session.user.user_metadata.full_name || '',
+                organization: session.user.user_metadata.organization || '',
+              });
+
+              toast({
+                title: "Welcome!",
+                description: "Your email has been confirmed and account is ready.",
+                variant: "success",
+              });
+
+              navigate('/');
+            } else {
+              console.error('Error creating profile:', error);
+              toast({
+                title: "Profile setup failed",
+                description: "Please contact support if this persists.",
+                variant: "destructive",
+              });
+            }
+          }
+        }
+        
         setSession(session);
         setUser(session?.user || null);
         
@@ -77,11 +111,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setIsLoading(false);
       }
     );
-
+  
     return () => {
       subscription.unsubscribe();
     };
-  }, []);
+  }, [navigate]);
 
   useEffect(() => {
     if (user) {
@@ -91,8 +125,23 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const signIn = async (email: string, password: string) => {
     try {
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
+
+      try {
+        await profilesApi.create(data.session, { 
+          id: data.user?.id,
+          fullName: data.user?.user_metadata.full_name,
+          organization: data.user?.user_metadata.organization,
+        });
+      } catch (error) {
+        if (error instanceof Error && error.message.includes('409')) {
+          console.error('Profile already exists:', error);
+        } else {
+          throw error;
+        }
+      }
+
       navigate('/');
       toast({
         title: "Welcome back!",
@@ -110,9 +159,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const signUp = async (email: string, password: string, name: string, organization: string) => {
+    setIsSigningUp(true);
     try {
-      console.log("Signing up with organization:", organization); // Debug log
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -124,7 +173,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       });
       
       if (error) throw error;
-      
+
       toast({
         title: "Account created!",
         description: "Please check your email to verify your account.",
@@ -139,6 +188,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         variant: "destructive",
       });
       throw error;
+    } finally {
+      setIsSigningUp(false);
     }
   };
 

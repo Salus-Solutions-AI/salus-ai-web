@@ -21,7 +21,7 @@ const Auth = () => {
   const navigate = useNavigate();
 
   if (user && !isLoading) {
-    navigate('/summary');
+    navigate('/');
     return null;
   }
 

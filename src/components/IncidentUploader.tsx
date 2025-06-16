@@ -75,7 +75,6 @@ const IncidentUploader = ({ onUploadSuccess }) => {
     formData.append('file', file);
 
     const incident = await incidentsApi.create(session, formData);
-    console.log(incident);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
