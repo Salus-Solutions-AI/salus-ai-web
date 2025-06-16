@@ -72,28 +72,22 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         // Handle email confirmation sign-in
         if (event === 'SIGNED_IN' && session?.user) {
           try {
-            await profilesApi.create(session, {
-              id: session.user.id,
-              fullName: session.user.user_metadata.full_name || '',
-              organization: session.user.user_metadata.organization || '',
-            });
-            
-            toast({
-              title: "Welcome!",
-              description: "Your email has been confirmed and account is ready.",
-              variant: "success",
-            });
-            
-            navigate('/');
-          } catch (createError) {
-            if (createError instanceof Error && createError.message.includes('409')) {
+            await profilesApi.getById(session, session.user.id);
+          } catch (error) {
+            if (error instanceof Error && error.message.includes('404')) {
+              await profilesApi.create(session, {
+                id: session.user.id,
+                fullName: session.user.user_metadata.full_name || '',
+                organization: session.user.user_metadata.organization || '',
+              });
+
               toast({
                 title: "Welcome!",
                 description: "Your email has been confirmed and account is ready.",
                 variant: "success",
               });
             } else {
-              console.error('Error creating profile:', createError);
+              console.error('Error creating profile:', error);
               toast({
                 title: "Profile setup failed",
                 description: "Please contact support if this persists.",
@@ -101,6 +95,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
               });
             }
           }
+
+          navigate('/');
         }
         
         setSession(session);
