@@ -52,51 +52,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setIsLoading(true);
       try {
         const { data: { session } } = await supabase.auth.getSession();
-
-        // Check if we're coming from an email confirmation
-        const urlParams = new URLSearchParams(window.location.search);
-        const isEmailConfirmation = urlParams.get('type') === 'signup' && 
-                                    (urlParams.has('token_hash') || urlParams.has('access_token'));
-        
-        if (isEmailConfirmation && session?.user) {
-          // This is the first sign-in after email confirmation
-          // Create the profile now
-          try {
-            await profilesApi.create(session, {
-              id: session.user.id,
-              fullName: session.user.user_metadata.full_name || '',
-              organization: session.user.user_metadata.organization || '',
-            });
-            
-            toast({
-              title: "Email confirmed!",
-              description: "Your account is now active.",
-              variant: "success",
-            });
-          } catch (error) {
-            if (error instanceof Error && error.message.includes('409')) {
-              // Profile already exists, that's fine
-              console.log('Profile already exists');
-            } else {
-              console.error('Error creating profile:', error);
-              toast({
-                title: "Profile creation failed",
-                description: "There was an error setting up your profile. Please contact support.",
-                variant: "destructive",
-              });
-            }
-          }
-          
-          // Clean up the URL
-          window.history.replaceState({}, document.title, window.location.pathname);
-          
-          // Navigate to dashboard or home
-          navigate('/summary');
-        }
-
         setSession(session);
         setUser(session?.user || null);
-
+  
         if (session?.user) {
           fetchProfile(session.user.id);
         }
@@ -106,11 +64,48 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setIsLoading(false);
       }
     };
-
+  
     setupSession();
-
+  
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        console.log('Auth event:', event); // Debug log
+        
+        // Handle email confirmation sign-in
+        if (event === 'SIGNED_IN' && session?.user) {
+          try {
+            await profilesApi.create(session, {
+              id: session.user.id,
+              fullName: session.user.user_metadata.full_name || '',
+              organization: session.user.user_metadata.organization || '',
+            });
+            
+            toast({
+              title: "Welcome!",
+              description: "Your email has been confirmed and account is ready.",
+              variant: "success",
+            });
+            
+            // Navigate to dashboard after profile creation
+            navigate('/dashboard');
+          } catch (createError) {
+            if (createError instanceof Error && createError.message.includes('409')) {
+              toast({
+                title: "Welcome!",
+                description: "Your email has been confirmed and account is ready.",
+                variant: "success",
+              });
+            } else {
+              console.error('Error creating profile:', createError);
+              toast({
+                title: "Profile setup failed",
+                description: "Please contact support if this persists.",
+                variant: "destructive",
+              });
+            }
+          }
+        }
+        
         setSession(session);
         setUser(session?.user || null);
         
@@ -123,11 +118,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setIsLoading(false);
       }
     );
-
+  
     return () => {
       subscription.unsubscribe();
     };
-  }, []);
+  }, [navigate]);
 
   useEffect(() => {
     if (user) {
