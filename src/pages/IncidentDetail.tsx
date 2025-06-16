@@ -21,7 +21,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/componen
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Incident, IncidentProcessingStatus } from '@/types';
+import { Incident, IncidentProcessingStatus, Organization } from '@/types';
 import { formatDate } from '@/utils/dateUtils';
 import { getStatusColor, getStatusIcon } from '@/utils/statusUtils';
 import { cn } from "@/lib/utils";
@@ -33,15 +33,17 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { incidentsApi } from '@/api/resources/incidents';
+import { organizationsApi } from '@/api/resources/organizations';
 import { useAuth } from '@/contexts/AuthContext';
 import RelatedIncidents from '@/components/RelatedIncidents';
 
 const IncidentDetail = () => {
   const { id } = useParams<{ id: string }>();
-  const { session } = useAuth();
+  const { session, profile } = useAuth();
   const navigate = useNavigate();
   
   const [incident, setIncident] = useState<Incident | null>(null);
+  const [organization, setOrganization] = useState<Organization | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [completingReview, setCompletingReview] = useState(false);
@@ -53,14 +55,18 @@ const IncidentDetail = () => {
   const [bodyCopied, setBodyCopied] = useState(false);
   
   useEffect(() => {
-    const fetchIncident = async () => {
-      if (!id) return;
+    const fetchData = async () => {
+      if (!id || !session || !profile?.organizationId) return;
       
       try {
-        const incident = await incidentsApi.getById(session, id);
-        setIncident(incident);
+        const [incidentData, orgData] = await Promise.all([
+          incidentsApi.getById(session, id),
+          organizationsApi.getById(session, profile.organizationId)
+        ]);
+        setIncident(incidentData);
+        setOrganization(orgData);
       } catch (error) {
-        console.error('Error fetching incident:', error);
+        console.error('Error fetching data:', error);
         toast({
           title: "Error",
           description: "Failed to load incident details",
@@ -71,8 +77,8 @@ const IncidentDetail = () => {
       }
     };
     
-    fetchIncident();
-  }, [id]);
+    fetchData();
+  }, [id, session, profile?.organizationId]);
 
   const handleChange = (field: keyof Incident, value: any) => {
     if (field === 'needsMoreInfo' && value === true) {
@@ -250,57 +256,48 @@ const IncidentDetail = () => {
 
 
   const generateEmailSubject = () => {
-    if (!incident) return "";
+    if (!incident || !organization) return "";
 
     if (incident.requiresTimelyWarning) {
-      return `Timely Warning Crime Bulletin`;
+      return organization.timelyWarningEmailSubject
+        .replace('{{ title }}', incident.title)
+        .replace('{{ category }}', incident.category)
+        .replace('{{ datetimeOccurred }}', `${formatDate(incident.date)} ${incident.timeStr}`)
+        .replace('{{ datetimeReported }}', formatDate(incident.uploadedAt))
+        .replace('{{ location }}', incident.location)
+        .replace('{{ summary }}', incident.summary);
     }
     
-    return `Additional Information Needed for Incident #${incident.number}`;
+    return organization.additionalInfoEmailSubject
+      .replace('{{ title }}', incident.title)
+      .replace('{{ location }}', incident.location)
+      .replace('{{ datetimeOccurred }}', `${formatDate(incident.date)} ${incident.timeStr}`)
+      .replace('{{ datetimeReported }}', formatDate(incident.uploadedAt));
   };
 
   const generateEmailBody = () => {
-    if (!incident) return "";
+    if (!incident || !organization) return "";
     
     if (incident.requiresTimelyWarning) {
-      return `Timely Warning Crime Bulletin
-
-This Timely Warning Bulletin is being issued in compliance with the
-Jeanne Clery Act and the purpose is to provide preventative information to the Campus
-community to aid members from becoming the victim of a similar crime.
-      
-Incident: ${incident.category}
-Date/Time Occurred: ${formatDate(incident.date)} ${incident.timeStr}
-Date/Time Reported: ${formatDate(incident.uploadedAt)}
-Location: ${incident.location}
-
-Incident Summary:
-${incident.summary}
-
-Description of Reported Suspect:
-[Physical description: gender, height, build, complexion, clothing, distinguishing features, direction of travel, if known.]
-(If no description available: "At this time, no suspect description is available.")
-
-Safety Tips:
-- Stay alert to your surroundings, especially when walking alone.
+      return organization.timelyWarningEmailBody
+        .replace('{{ title }}', incident.title)
+        .replace('{{ category }}', incident.category)
+        .replace('{{ datetimeOccurred }}', `${formatDate(incident.date)} ${incident.timeStr}`)
+        .replace('{{ datetimeReported }}', formatDate(incident.uploadedAt))
+        .replace('{{ location }}', incident.location)
+        .replace('{{ summary }}', incident.summary)
+        .replace('{{ suspectDescription }}', 'At this time, no suspect description is available.')
+        .replace('{{ safetyTips }}', `- Stay alert to your surroundings, especially when walking alone.
 - Avoid distractions like phones and earbuds when walking in public spaces.
 - Walk with others whenever possible, especially at night. 
-- Report any suspicious behavior to Campus Safety immediately.`;
+- Report any suspicious behavior to Campus Safety immediately.`);
     }
 
-    return `Hello,
-
-We are reviewing incident #${incident.number} "${incident.title}" that occurred on ${formatDate(incident.date)} at ${incident.location}.
-
-We need additional information to properly process this incident. Specifically, we need:
-1. More detailed explanation of the events
-2. Names of any witnesses
-3. Any additional documentation or evidence
-
-Please reply to this email with the requested information at your earliest convenience.
-
-Thank you,
-Campus Safety Team`;
+    return organization.additionalInfoEmailBody
+      .replace('{{ title }}', incident.title)
+      .replace('{{ location }}', incident.location)
+      .replace('{{ datetimeOccurred }}', `${formatDate(incident.date)} ${incident.timeStr}`)
+      .replace('{{ datetimeReported }}', formatDate(incident.uploadedAt));
   };
 
   const handleCopySubject = () => {
