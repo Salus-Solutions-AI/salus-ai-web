@@ -69,8 +69,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        console.log('Auth event:', event); // Debug log
-        
         // Handle email confirmation sign-in
         if (event === 'SIGNED_IN' && session?.user) {
           try {
@@ -86,8 +84,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
               variant: "success",
             });
             
-            // Navigate to dashboard after profile creation
-            navigate('/dashboard');
+            navigate('/summary');
           } catch (createError) {
             if (createError instanceof Error && createError.message.includes('409')) {
               toast({
