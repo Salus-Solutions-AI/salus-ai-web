@@ -12,9 +12,14 @@ vi.mock('@/api/resources/incidents', () => ({
 
 vi.mock('@/contexts/AuthContext', () => ({
   useAuth: () => ({
-    user: { id: 'test-id' }
+    user: { id: 'test-id' },
+    session: { access_token: 'test-token' }
   }),
   AuthProvider: ({ children }) => children
+}));
+
+vi.mock('@/components/ui/toast', () => ({
+  toast: vi.fn()
 }));
 
 vi.mock('recharts', () => {
@@ -23,27 +28,20 @@ vi.mock('recharts', () => {
     ...OriginalModule,
     ResponsiveContainer: ({ children }) => <div data-testid="responsive-container">{children}</div>,
     BarChart: ({ children }) => <div data-testid="bar-chart">{children}</div>,
-    PieChart: ({ children }) => <div data-testid="pie-chart">{children}</div>,
-    Pie: ({ children }) => <div data-testid="pie">{children}</div>,
     Bar: ({ children }) => <div data-testid="bar">{children}</div>,
     XAxis: () => <div data-testid="x-axis" />,
     YAxis: () => <div data-testid="y-axis" />,
     CartesianGrid: () => <div data-testid="cartesian-grid" />,
     Tooltip: () => <div data-testid="tooltip" />,
-    Cell: () => <div data-testid="cell" />,
-    Legend: () => <div data-testid="legend" />
+    Cell: () => <div data-testid="cell" />
   };
 });
-
-vi.mock('@/components/ui/toast', () => ({
-  toast: vi.fn()
-}));
 
 const mockIncidents: Incident[] = [
   {
     id: '1',
     title: 'Test Incident 1',
-    date: '2025-04-01T12:00:00Z',
+    date: '2023-04-01T12:00:00Z',
     timeStr: '12:00 PM',
     category: 'Burglary',
     location: 'Campus Library',
@@ -54,7 +52,7 @@ const mockIncidents: Incident[] = [
     pdfUrl: 'https://example.com/test.pdf',
     preSignedUrl: 'https://pre-signed.com',
     filePath: '/test/path.pdf',
-    uploadedAt: '2025-04-01T12:00:00Z',
+    uploadedAt: '2023-04-01T12:00:00Z',
     uploadedBy: 'user-id',
     uploaderName: 'Test User',
     isClery: true,
@@ -63,7 +61,7 @@ const mockIncidents: Incident[] = [
   {
     id: '2',
     title: 'Test Incident 2',
-    date: '2025-04-02T12:00:00Z',
+    date: '2023-04-02T12:00:00Z',
     timeStr: '12:00 PM',
     category: 'Theft',
     location: 'Student Center',
@@ -74,7 +72,7 @@ const mockIncidents: Incident[] = [
     pdfUrl: 'https://example.com/test2.pdf',
     preSignedUrl: 'https://pre-signed.com',
     filePath: '/test/path2.pdf',
-    uploadedAt: '2025-04-02T12:00:00Z',
+    uploadedAt: '2023-04-02T12:00:00Z',
     uploadedBy: 'user-id',
     uploaderName: 'Test User',
     isClery: false,
@@ -106,15 +104,29 @@ describe('IncidentStats', () => {
     render(<IncidentStats />);
     
     await waitFor(() => {
-      expect(screen.getByText('2')).toBeInTheDocument();
+      // Check for the chart title
+      expect(screen.getByText('Clery Incidents by Category')).toBeInTheDocument();
       
-      const singleCounts = screen.getAllByText('1');
-      expect(singleCounts.length).toEqual(2);
+      // Check for chart components
+      expect(screen.getByTestId('responsive-container')).toBeInTheDocument();
+      expect(screen.getByTestId('bar-chart')).toBeInTheDocument();
     });
 
     await waitFor(() => {
-      expect(screen.getByText('Clery Incidents by Category')).toBeInTheDocument();
-      expect(screen.getByText('Incidents by Status')).toBeInTheDocument();
+      // Check for table headers
+      expect(screen.getByText('Year')).toBeInTheDocument();
+      expect(screen.getByText('Campus Residential')).toBeInTheDocument();
+      expect(screen.getByText('Campus Total')).toBeInTheDocument();
+      expect(screen.getByText('Non-Campus')).toBeInTheDocument();
+      expect(screen.getByText('Public Property')).toBeInTheDocument();
+      
+      // Check for years in the table
+      expect(screen.getByText('2025')).toBeInTheDocument();
+      expect(screen.getByText('2024')).toBeInTheDocument();
+      expect(screen.getByText('2023')).toBeInTheDocument();
+      
+      // Check for category table
+      expect(screen.getByText('Theft')).toBeInTheDocument();
     });
   });
 
