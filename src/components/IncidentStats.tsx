@@ -135,8 +135,6 @@ const IncidentStats = () => {
 
       const incidentYear = new Date(incident.date).getFullYear().toString();
 
-      console.log(incidentYear);
-      
       if (years.includes(incidentYear)) {
         const location = incident.location?.toLowerCase() || '';
         
