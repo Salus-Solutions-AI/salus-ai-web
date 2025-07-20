@@ -127,7 +127,7 @@ describe('IncidentDetail', () => {
     expect(screen.getByLabelText(/explanation/i)).toHaveValue('Test explanation');
     expect(screen.getByLabelText(/clery/i)).not.toBeChecked();
     expect(screen.getByLabelText(/needs more information/i)).not.toBeChecked();
-    expect(screen.getByLabelText(/requires timely warning/i)).not.toBeChecked();
+    expect(screen.getByLabelText(/timely warning recommended/i)).not.toBeChecked();
     expect(screen.getByText(/pending review/i)).toBeInTheDocument();
     expect(screen.getByText(/complete review/i)).toBeInTheDocument();
     expect(screen.getByText(/download pdf/i)).toBeInTheDocument();
@@ -168,7 +168,7 @@ describe('IncidentDetail', () => {
     await waitForDataToLoad();
     
     const needsMoreInfoCheckbox = screen.getByLabelText(/needs more information/i);
-    const requiresTimelyWarningCheckbox = screen.getByLabelText(/requires timely warning/i);
+    const requiresTimelyWarningCheckbox = screen.getByLabelText(/timely warning recommended/i);
     
     expect(needsMoreInfoCheckbox).not.toBeChecked();
     expect(requiresTimelyWarningCheckbox).not.toBeChecked();

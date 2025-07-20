@@ -507,11 +507,12 @@ const IncidentDetail = () => {
                 <div className="bg-red-50 p-4 rounded-md border border-red-200 mb-4">
                   <div className="flex items-center gap-2 text-red-800 font-medium mb-2">
                     <AlertTriangle className="h-5 w-5" />
-                    <p className="text-red-700 text-sm">
-                      This incident requires a timely warning.
-                      Use the "Generate Email Template" button to generate the timely warning email.
-                    </p>
+                    <span>Timely Warning Recommended</span>
                   </div>
+                  <p className="text-red-700 text-sm">
+                    A timely warning is recommended for this incident.
+                    Use the "Generate Email Template" button to generate the timely warning email.
+                  </p>
                 </div>
               )}
               {incident?.needsMoreInfo && (
@@ -600,7 +601,7 @@ const IncidentDetail = () => {
                     disabled={isCompleted}
                   />
                   <span className="flex items-center">
-                    Requires Timely Warning
+                    Timely Warning Recommended
                     <Shield className="ml-1 h-4 w-4 text-red-500" />
                   </span>
                 </Label>
