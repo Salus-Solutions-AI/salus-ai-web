@@ -150,7 +150,7 @@ const IncidentStats = () => {
         
         stats[category][incidentYear][locationType]++;
         
-        if (locationType !== 'Non-Campus' && locationType !== 'Public Property') {
+        if (locationType === 'Campus Residential') {
           stats[category][incidentYear]['Campus Total']++;
         }
       }
